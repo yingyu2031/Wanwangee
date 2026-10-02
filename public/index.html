@@ -1,0 +1,53 @@
+<!-- 新增商品彈窗 (Modal) - 升級版含圖片上傳 -->
+<div id="productModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+            <h3 class="text-sm font-bold text-brandYellow">上架新預購商品</h3>
+            <button onclick="closeProductModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
+        </div>
+        <div class="space-y-3 text-xs">
+            <!-- 商品名稱 -->
+            <div>
+                <label class="block text-zinc-400 mb-1">商品名稱</label>
+                <input type="text" placeholder="例如：S.H.Figuarts 假面騎士..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+            </div>
+
+            <!-- 圖片上傳欄位 -->
+            <div>
+                <label class="block text-zinc-400 mb-1">商品圖片</label>
+                <div class="flex items-center space-x-2">
+                    <input type="file" id="productImageFile" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-brandYellow file:text-brandBlack hover:file:bg-yellow-400 cursor-pointer">
+                </div>
+                <span class="text-[10px] text-zinc-500 mt-1 block">支援 JPG、PNG 格式，建議尺寸 800x800px</span>
+            </div>
+
+            <!-- 價格與訂金 -->
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-zinc-400 mb-1">預購總價 (NTD)</label>
+                    <input type="number" placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">預收訂金 (NTD)</label>
+                    <input type="number" placeholder="1500" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+            </div>
+
+            <!-- 發售時間與配額 -->
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-zinc-400 mb-1">預計發售時間</label>
+                    <input type="text" placeholder="2026 Q4" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">總配額數量</label>
+                    <input type="number" placeholder="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+            </div>
+        </div>
+
+        <button onclick="saveProduct()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg">
+            確認上架並同步至前台 LIFF
+        </button>
+    </div>
+</div>

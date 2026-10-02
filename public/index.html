@@ -52,39 +52,57 @@
 
         <!-- ================= 區塊 A：商品上架與管理 ================= -->
         <div id="productsSection" class="space-y-6">
-            <!-- 上架新商品按鈕列 -->
             <div class="flex justify-between items-center">
-                <h2 class="text-sm font-bold text-zinc-300">現行預購商品管理</h2>
+                <h2 class="text-sm font-bold text-zinc-300">現行預購商品管理 (含圖檔與明細檢視)</h2>
                 <button onclick="openProductModal()" class="bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2 rounded-xl transition shadow flex items-center space-x-1">
                     <span>＋ 上架新預購商品</span>
                 </button>
             </div>
 
-            <!-- 商品管理列表卡片 -->
+            <!-- 商品管理列表卡片 (調整圖檔大小與明細按鈕) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex justify-between items-center">
-                    <div class="space-y-1">
-                        <span class="text-[10px] bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold">預購中</span>
-                        <h3 class="text-sm font-bold text-white">RX-93ff v GUNDAM Statue Model</h3>
-                        <p class="text-xs text-zinc-400">總價: NT$ 4,280 | 訂金: NT$ 1,500</p>
-                        <p class="text-xs text-zinc-400">已預購人數/配額: <span class="text-brandYellow font-bold">15 / 30 組</span></p>
+                <!-- 商品 1 -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex space-x-4 items-center">
+                    <!-- 商品圖片 (合理大小固定比例) -->
+                    <div class="w-24 h-24 bg-zinc-800 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-700 flex items-center justify-center">
+                        <span class="text-[10px] text-zinc-500">商品圖</span>
                     </div>
-                    <div class="flex flex-col space-y-2">
-                        <button class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-zinc-700 transition">編輯</button>
-                        <button onclick="triggerArrived('RX-93ff v GUNDAM')" class="bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 text-xs font-bold px-3 py-1.5 rounded-lg transition">標記到貨＆分派</button>
+                    <div class="flex-grow space-y-1">
+                        <span class="text-[10px] bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold">預購中</span>
+                        <h3 class="text-sm font-bold text-white leading-snug">RX-93ff v GUNDAM Statue</h3>
+                        <p class="text-xs text-zinc-400">總價: NT$ 4,280 | 訂金: NT$ 1,500</p>
+                        <p class="text-xs text-zinc-400">已預購/配額: <span class="text-brandYellow font-bold">15 / 30 組</span></p>
+                        <div class="pt-1 flex space-x-2">
+                            <button onclick="openDetailModal('RX-93ff v GUNDAM')" class="text-[11px] bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2.5 py-1 rounded-lg border border-zinc-700 transition font-bold">
+                                📊 查看預購人明細
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-2 flex-shrink-0">
+                        <button onclick="openEditModal('RX-93ff v GUNDAM', 4280, 1500, '2026 Q4', 30)" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-zinc-700 transition text-center">編輯</button>
+                        <button onclick="triggerArrived('RX-93ff v GUNDAM')" class="bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 text-xs font-bold px-3 py-1.5 rounded-lg transition text-center">標記到貨</button>
                     </div>
                 </div>
 
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex justify-between items-center">
-                    <div class="space-y-1">
-                        <span class="text-[10px] bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold">預購中</span>
-                        <h3 class="text-sm font-bold text-white">POPMART LABUBU The Monsters</h3>
-                        <p class="text-xs text-zinc-400">總價: NT$ 2,400 | 訂金: NT$ 1,000</p>
-                        <p class="text-xs text-zinc-400">已預購人數/配額: <span class="text-brandYellow font-bold">22 / 25 組</span></p>
+                <!-- 商品 2 -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex space-x-4 items-center">
+                    <div class="w-24 h-24 bg-zinc-800 rounded-xl overflow-hidden flex-shrink-0 border border-zinc-700 flex items-center justify-center">
+                        <span class="text-[10px] text-zinc-500">商品圖</span>
                     </div>
-                    <div class="flex flex-col space-y-2">
-                        <button class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-zinc-700 transition">編輯</button>
-                        <button onclick="triggerArrived('POPMART LABUBU')" class="bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 text-xs font-bold px-3 py-1.5 rounded-lg transition">標記到貨＆分派</button>
+                    <div class="flex-grow space-y-1">
+                        <span class="text-[10px] bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold">預購中</span>
+                        <h3 class="text-sm font-bold text-white leading-snug">POPMART LABUBU Monsters</h3>
+                        <p class="text-xs text-zinc-400">總價: NT$ 2,400 | 訂金: NT$ 1,000</p>
+                        <p class="text-xs text-zinc-400">已預購/配額: <span class="text-brandYellow font-bold">22 / 25 組</span></p>
+                        <div class="pt-1 flex space-x-2">
+                            <button onclick="openDetailModal('POPMART LABUBU')" class="text-[11px] bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2.5 py-1 rounded-lg border border-zinc-700 transition font-bold">
+                                📊 查看預購人明細
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-2 flex-shrink-0">
+                        <button onclick="openEditModal('POPMART LABUBU', 2400, 1000, '即將到貨', 25)" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-zinc-700 transition text-center">編輯</button>
+                        <button onclick="triggerArrived('POPMART LABUBU')" class="bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 text-xs font-bold px-3 py-1.5 rounded-lg transition text-center">標記到貨</button>
                     </div>
                 </div>
             </div>
@@ -95,7 +113,7 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-zinc-900/60 border border-zinc-800 p-4 rounded-2xl">
                 <div>
                     <h2 class="text-sm font-bold text-white">客戶預購單總覽</h2>
-                    <p class="text-xs text-zinc-400">在此檢視所有客戶預購狀況，並可對已到貨商品執行批次 LINE 通知與分派。</p>
+                    <p class="text-xs text-zinc-400">在此檢視所有客戶預購狀況，對照試算表欄位進行對帳與到貨分派。</p>
                 </div>
                 <div class="flex space-x-2 w-full sm:w-auto">
                     <select class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2 text-zinc-300 focus:outline-none">
@@ -109,47 +127,35 @@
                 </div>
             </div>
 
-            <!-- 客戶預購清單表格/卡片 -->
+            <!-- 客戶預購清單表格 -->
             <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800">
                             <tr>
                                 <th class="p-3"><input type="checkbox"></th>
-                                <th class="p-3">訂單編號 / 日期</th>
-                                <th class="p-3">客戶暱稱 (LINE ID)</th>
-                                <th class="p-3">預購商品</th>
+                                <th class="p-3">訂單編號 / 上架日期</th>
+                                <th class="p-3">客戶姓名 / LINE ID</th>
+                                <th class="p-3">預購商品名稱</th>
                                 <th class="p-3">數量</th>
-                                <th class="p-3">已付訂金</th>
-                                <th class="p-3">訂單狀態</th>
+                                <th class="p-3">訂金 / 總價</th>
+                                <th class="p-3">狀態</th>
                                 <th class="p-3 text-right">操作</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-800 text-zinc-300">
                             <tr>
                                 <td class="p-3"><input type="checkbox"></td>
-                                <td class="p-3 font-mono text-zinc-400">#TH20260901<br><span class="text-[10px]">2026-09-01</span></td>
+                                <td class="p-3 font-mono text-zinc-400">#TH20260901<br><span class="text-[10px]">發售: 2026/10</span></td>
                                 <td class="p-3 font-bold text-white">玩家小傑 <span class="text-[10px] text-zinc-500 block">(@jack_toy)</span></td>
                                 <td class="p-3">RX-93ff v GUNDAM</td>
                                 <td class="p-3 font-bold">1 隻</td>
-                                <td class="p-3 text-brandYellow font-bold">NT$ 1,500</td>
+                                <td class="p-3 text-brandYellow font-bold">NT$ 1,500 / 4,280</td>
                                 <td class="p-3"><span class="bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">已付訂金</span></td>
                                 <td class="p-3 text-right">
                                     <button onclick="dispatchItem('玩家小傑', 'RX-93ff v GUNDAM')" class="bg-brandYellow text-brandBlack font-bold px-3 py-1 rounded-lg hover:bg-yellow-400 transition">
                                         分派＆發LINE
                                     </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="p-3"><input type="checkbox"></td>
-                                <td class="p-3 font-mono text-zinc-400">#TH20260815<br><span class="text-[10px]">2026-08-15</span></td>
-                                <td class="p-3 font-bold text-white">阿豪收藏庫 <span class="text-[10px] text-zinc-500 block">(@hao_figures)</span></td>
-                                <td class="p-3">POPMART LABUBU</td>
-                                <td class="p-3 font-bold">2 隻</td>
-                                <td class="p-3 text-brandYellow font-bold">NT$ 2,000</td>
-                                <td class="p-3"><span class="bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] font-bold">已到貨補尾款</span></td>
-                                <td class="p-3 text-right">
-                                    <span class="text-zinc-500">已通知</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -159,56 +165,88 @@
         </div>
     </main>
 
-    <!-- 新增商品彈窗 (Modal) - 升級版含圖片上傳 -->
+    <!-- 1. 新增/編輯商品共用彈窗 (Modal) -->
     <div id="productModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-4">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
-                <h3 class="text-sm font-bold text-brandYellow">上架新預購商品</h3>
+                <h3 id="modalTitle" class="text-sm font-bold text-brandYellow">上架新預購商品</h3>
                 <button onclick="closeProductModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
             </div>
             <div class="space-y-3 text-xs">
-                <!-- 商品名稱 -->
                 <div>
                     <label class="block text-zinc-400 mb-1">商品名稱</label>
-                    <input type="text" placeholder="例如：S.H.Figuarts 假面騎士..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                    <input type="text" id="inputName" placeholder="例如：S.H.Figuarts 假面騎士..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
                 </div>
-
-                <!-- 圖片上傳欄位 -->
                 <div>
                     <label class="block text-zinc-400 mb-1">商品圖片</label>
-                    <div class="flex items-center space-x-2">
-                        <input type="file" id="productImageFile" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-brandYellow file:text-brandBlack hover:file:bg-yellow-400 cursor-pointer">
-                    </div>
-                    <span class="text-[10px] text-zinc-500 mt-1 block">支援 JPG、PNG 格式，建議尺寸 800x800px</span>
+                    <input type="file" id="productImageFile" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400 text-xs file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-brandYellow file:text-brandBlack cursor-pointer">
                 </div>
-
-                <!-- 價格與訂金 -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-zinc-400 mb-1">預購總價 (NTD)</label>
-                        <input type="number" placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                        <input type="number" id="inputPrice" placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 mb-1">預收訂金 (NTD)</label>
-                        <input type="number" placeholder="1500" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                        <input type="number" id="inputDeposit" placeholder="1500" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
-
-                <!-- 發售時間與配額 -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-zinc-400 mb-1">預計發售時間</label>
-                        <input type="text" placeholder="2026 Q4" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                        <input type="text" id="inputDate" placeholder="2026 Q4" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
                         <label class="block text-zinc-400 mb-1">總配額數量</label>
-                        <input type="number" placeholder="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow">
+                        <input type="number" id="inputQuota" placeholder="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
             </div>
-
             <button onclick="saveProduct()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg">
-                確認上架並同步至前台 LIFF
+                確認儲存商品設定
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. 查看預購人明細彈窗 (對照試算表買家清單) -->
+    <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+                <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">📊 預購人明細清單</h3>
+                <button onclick="closeDetailModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <div class="max-h-60 overflow-y-auto space-y-2 text-xs">
+                <table class="w-full text-left">
+                    <thead class="text-zinc-500 border-b border-zinc-800 pb-1">
+                        <tr>
+                            <th class="pb-2">買家暱稱</th>
+                            <th class="pb-2 text-center">數量</th>
+                            <th class="pb-2 text-right">訂金單價</th>
+                            <th class="pb-2 text-right">小計</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-800/60 text-zinc-300" id="detailTableBody">
+                        <tr>
+                            <td class="py-2">玩家小傑 (@jack_toy)</td>
+                            <td class="py-2 text-center font-bold">1</td>
+                            <td class="py-2 text-right">NT$ 1,500</td>
+                            <td class="py-2 text-right text-brandYellow font-bold">NT$ 1,500</td>
+                        </tr>
+                        <tr>
+                            <td class="py-2">阿豪收藏庫 (@hao_figures)</td>
+                            <td class="py-2 text-center font-bold">2</td>
+                            <td class="py-2 text-right">NT$ 1,500</td>
+                            <td class="py-2 text-right text-brandYellow font-bold">NT$ 3,000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 flex justify-between items-center text-xs">
+                <span class="text-zinc-400">總預購人數：<span class="text-white font-bold">15 人</span></span>
+                <span class="text-zinc-400">總預購數量：<span class="text-brandYellow font-black text-sm">18 隻</span></span>
+            </div>
+            <button onclick="closeDetailModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 rounded-xl transition text-xs">
+                關閉視窗
             </button>
         </div>
     </div>
@@ -239,7 +277,26 @@
             }
         }
 
+        // 開啟新增商品 Modal
         function openProductModal() {
+            document.getElementById('modalTitle').innerText = '上架新預購商品';
+            document.getElementById('inputName').value = '';
+            document.getElementById('inputPrice').value = '';
+            document.getElementById('inputDeposit').value = '';
+            document.getElementById('inputDate').value = '';
+            document.getElementById('inputQuota').value = '';
+            document.getElementById('productModal').classList.remove('hidden');
+            document.getElementById('productModal').classList.add('flex');
+        }
+
+        // 開啟編輯商品 Modal (修復點擊編輯沒反應的問題)
+        function openEditModal(name, price, deposit, date, quota) {
+            document.getElementById('modalTitle').innerText = '編輯預購商品：' + name;
+            document.getElementById('inputName').value = name;
+            document.getElementById('inputPrice').value = price;
+            document.getElementById('inputDeposit').value = deposit;
+            document.getElementById('inputDate').value = date;
+            document.getElementById('inputQuota').value = quota;
             document.getElementById('productModal').classList.remove('hidden');
             document.getElementById('productModal').classList.add('flex');
         }
@@ -249,23 +306,35 @@
             document.getElementById('productModal').classList.add('hidden');
         }
 
+        // 查看預購人明細 Modal
+        function openDetailModal(productName) {
+            document.getElementById('detailModalTitle').innerText = `📊 預購人明細清單 - ${productName}`;
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('flex');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('flex');
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
         function saveProduct() {
-            alert('成功上架新商品！前台 LIFF 預購專區將即時同步顯示。');
+            alert('成功儲存商品資料！');
             closeProductModal();
         }
 
         function triggerArrived(productName) {
-            if(confirm(`確定將「${productName}」標記為「已到貨」並解鎖所有預購戶的尾款補款權限嗎？`)) {
-                alert(`已成功更新！系統將自動觸發 LINE 推播通知所有預購此商品的客戶。`);
+            if(confirm(`確定將「${productName}」標記為到貨嗎？`)) {
+                alert(`已標記到貨，並觸發 LINE 通知！`);
             }
         }
 
         function dispatchItem(customer, product) {
-            alert(`已將「${product}」分派給客戶 [${customer}]！\n已同步透過 LINE Bot 發送取貨/補尾款通知。`);
+            alert(`已將「${product}」分派給 [${customer}] 並發送 LINE 通知！`);
         }
 
         function batchNotifyLine() {
-            alert('已成功向所有勾選的預購戶發送 LINE 催繳尾款與到貨通知！');
+            alert('已成功批次發送 LINE 到貨與補尾款通知！');
         }
     </script>
 </body>

@@ -446,8 +446,9 @@
                                     📊 預購人明細
                                 </button>
                                 <div class="space-x-1.5">
-                                    <button onclick="openEditModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-                                    <button onclick="openArrivedModal('${p.name}', ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+                                    // 確保編輯或到貨入庫時傳入的是 id
+                                    <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
+                                    <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
                                 </div>
                             </div>
                         </div>
@@ -537,40 +538,44 @@
     }
         
     // 上架預購商品 API
-    async function saveProduct() {
-    const name = document.getElementById('inputName').value;
-    const year_month = document.getElementById('inputYM').value;
-    const quota = document.getElementById('inputQuota').value;
-    const start_time = document.getElementById('inputStart').value;
-    const end_time = document.getElementById('inputEnd').value;
-    const price = document.getElementById('inputPrice').value;
-    const pre_price = document.getElementById('inputPrePrice').value;
-    const is_limited = document.getElementById('isLimited').checked;
-    const need_deposit = document.getElementById('needDeposit').checked;
+let isSubmitting = false;
+
+async function saveProduct() {
+    // 如果目前正在送出中，直接中斷，避免重複觸發
+    if (isSubmitting) return;
     
-    // 取得前端上傳的圖片檔案
-    const imageInput = document.getElementById('inputImage');
-    const file = imageInput && imageInput.files[0] ? imageInput.files[0] : null;
-
-    if (!name || !start_time || !end_time || !price || !pre_price) {
-        alert('請填寫所有必填欄位！');
-        return;
-    }
-
-    // 將圖片轉為 Base64 字串的輔助函式
-    const convertToBase64 = (file) => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
-        });
-    };
+    isSubmitting = true; // 鎖定開關
 
     try {
+        const name = document.getElementById('inputName').value;
+        const year_month = document.getElementById('inputYM').value;
+        const quota = document.getElementById('inputQuota').value;
+        const start_time = document.getElementById('inputStart').value;
+        const end_time = document.getElementById('inputEnd').value;
+        const price = document.getElementById('inputPrice').value;
+        const pre_price = document.getElementById('inputPrePrice').value;
+        const is_limited = document.getElementById('isLimited').checked;
+        const need_deposit = document.getElementById('needDeposit').checked;
+        
+        const imageInput = document.getElementById('inputImage');
+        const file = imageInput && imageInput.files[0] ? imageInput.files[0] : null;
+
+        if (!name || !start_time || !end_time || !price || !pre_price) {
+            alert('請填寫所有必填欄位！');
+            return; // 這裡要特別注意，直接 return 之前要把開關解鎖，或者用 try...finally
+        }
+
+        const convertToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        };
+
         let image_url = '';
         if (file) {
-            // 將上傳的圖片轉成 Base64 純文字
             image_url = await convertToBase64(file);
         }
 
@@ -592,7 +597,7 @@
         const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(productData) // 直接送 JSON，不用 FormData
+            body: JSON.stringify(productData)
         });
         const result = await response.json();
 
@@ -608,6 +613,8 @@
     } catch (error) {
         console.error('API 錯誤:', error);
         alert('連線伺服器失敗或圖片檔案太大，請稍後再試。');
+    } finally {
+        isSubmitting = false; // 無論成功或失敗，最後一定解鎖開關
     }
 }
 

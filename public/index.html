@@ -258,24 +258,23 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">預購開始日 <span class="text-red-400">*</span></label>
-                        <input type="date" id="inputStart" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <input type="date" id="inputStart" required value="2026-10-01" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">預購結束日 <span class="text-red-400">*</span></label>
-                        <input type="date" id="inputEnd" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <input type="date" id="inputEnd" required value="2026-10-25" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">官方定價 <span class="text-red-400">*</span></label>
-                        <input type="number" id="inputPrice" required placeholder="4999" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
-                    </div>
+                        <input type="number" id="inputPrice" required value="4999" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                      </div>
                     <div class="w-full">
-                        <label class="block text-zinc-400 mb-1">優惠預購價 <span class="text-red-400">*</span></label>
-                        <input type="number" id="inputPrePrice" required placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">預購價 <span class="text-red-400">*</span></label>
+                        <input type="number" id="inputPrePrice" required value="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
-
                 <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
                     <div class="flex items-center space-x-2">
                         <input type="checkbox" id="isLimited" onchange="toggleLimitInput()" class="rounded bg-zinc-800 border-zinc-700">

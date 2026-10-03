@@ -44,7 +44,7 @@
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
             </svg>
             <div>
-                <span class="text-[10px] font-bold tracking-widest block opacity-75 leading-none">Wanwangee 玩玩具</span>
+                <span class="text-[10px] font-bold tracking-widest block opacity-75 leading-none">Wanwangee</span>
                 <h1 class="text-base font-black tracking-wider">會員資料註冊綁定</h1>
             </div>
         </div>
@@ -221,7 +221,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert('會員資料註冊綁定成功！');
+                    alert('會員資料更新成功！');
                     if (liff.isInClient()) {
                         liff.closeWindow();
                     }

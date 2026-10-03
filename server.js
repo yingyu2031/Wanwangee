@@ -252,6 +252,49 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
+// --- 修改/更新商品 API ---
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    
+    // 如果沒有上傳新圖片（image_url 是空的），我們可以選擇保留原本的圖片或更新
+    let query = `
+      UPDATE products 
+      SET name = $1, image_url = $2, year_month = $3, quota = $4, start_time = $5, end_time = $6, price = $7, pre_price = $8, is_limited = $9, limit_qty = $10, need_deposit = $11, deposit_amount = $12, memo = $13, status = $14
+      WHERE id = $15
+      RETURNING *;
+    `;
+    
+    const values = [
+      name, 
+      image_url || '', 
+      year_month, 
+      quota, 
+      start_time, 
+      end_time, 
+      price, 
+      pre_price, 
+      is_limited === 'true' || is_limited === true, 
+      limit_qty || 1, 
+      need_deposit === 'true' || need_deposit === true, 
+      deposit_amount || 0, 
+      memo || '', 
+      status || 'pre_ordering',
+      id
+    ];
+
+    const result = await pool.query(query, values);
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows[0] });
+    } else {
+      res.status(404).json({ success: false, message: '找不到該商品無法更新' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // 用 ID 取得單一商品資料
 app.get('/api/products/:id', async (req, res) => {
   try {
@@ -259,6 +302,21 @@ app.get('/api/products/:id', async (req, res) => {
     const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows[0] });
+    } else {
+      res.status(404).json({ success: false, message: '找不到該商品' });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- 刪除商品 API ---
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM products WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length > 0) {
+      res.json({ success: true, message: '商品已成功刪除' });
     } else {
       res.status(404).json({ success: false, message: '找不到該商品' });
     }

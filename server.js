@@ -347,7 +347,7 @@ app.get('/api/products/:id/orders', async (req, res) => {
     // 查詢該商品的所有訂單，並透過 LEFT JOIN 抓取會員的真實姓名
     const query = `
       SELECT o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo,
-             u.real_name, u.uid
+             u.real_name, u.uid, u.line_nickname
       FROM orders o
       LEFT JOIN users u ON o.uid = u.uid
       WHERE o.product_id = $1

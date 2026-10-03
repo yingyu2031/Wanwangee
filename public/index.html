@@ -79,7 +79,6 @@
     <!-- 主要內容區 -->
     <main class="p-4 sm:p-6 max-w-6xl mx-auto w-full flex-grow space-y-6">
         
-        <!-- 頁籤切換 (保留原設計，並新增「會員名單管理」按鈕) -->
         <div class="flex space-x-3 border-b border-zinc-800 pb-3 overflow-x-auto">
             <button onclick="switchAdminTab('products')" id="tabProducts" class="bg-brandYellow text-brandBlack px-5 py-2.5 rounded-xl text-xs font-black transition shadow whitespace-nowrap">
                 商品上架與預購管理
@@ -200,7 +199,7 @@
             </div>
         </div>
 
-        <!-- ================= 區塊 C：會員名單管理 (新增) ================= -->
+        <!-- ================= 區塊 C：會員名單管理 ================= -->
         <div id="membersSection" class="space-y-4 hidden">
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center">
                 <h3 class="text-sm font-bold text-brandYellow">會員名單列表</h3>
@@ -500,7 +499,7 @@
             }
         }
 
-        // 載入會員名單 API (新增)
+        // 載入會員名單 API
         async function loadMembers() {
             try {
                 const res = await fetch(`${API_BASE_URL}/api/admin/users`);
@@ -527,37 +526,84 @@
             }
         }
 
-        // 保留原有的互動與按鈕觸發函數
-        function openProductModal() {
-            document.getElementById('modalTitle').innerText = '上架新預購商品';
+    // 上架預購商品 API    
+    async function saveProduct() {
+    const name = document.getElementById('inputName').value;
+    const year_month = document.getElementById('inputYM').value;
+    const quota = parseInt(document.getElementById('inputQuota').value) || 30;
+    const start_time = document.getElementById('inputStart').value;
+    const end_time = document.getElementById('inputEnd').value;
+    const price = parseFloat(document.getElementById('inputPrice').value);
+    const pre_price = parseFloat(document.getElementById('inputPrePrice').value);
+    const is_limited = document.getElementById('isLimited').checked;
+    const need_deposit = document.getElementById('needDeposit').checked;
+
+    if (!name || !start_time || !end_time || isNaN(price) || isNaN(pre_price)) {
+        alert('請填寫所有必填欄位！');
+        return;
+    }
+
+    const productData = {
+        name,
+        year_month,
+        quota,
+        start_time,
+        end_time,
+        price,
+        pre_price,
+        is_limited,
+        limit_qty: is_limited ? 2 : 1,
+        need_deposit,
+        deposit_amount: need_deposit ? 1500 : 0
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productData)
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            alert('商品上架成功！');
+            closeProductModal();
+            // 若有商品列表載入函式可在此同步刷新
+            if (typeof loadProducts === 'function') {
+                loadProducts();
+            }
+        } else {
+            alert('上架失敗：' + (result.message || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('API 錯誤:', error);
+        alert('連線伺服器失敗，請稍後再試。');
+    }
+}
+        
+ // 1. 檢視預購人明細 (依下單時間排序)
+        async function openDetailModal(productName) {
+            document.getElementById('detailModalTitle').innerText = `預購人明細 - ${productName}`;
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('flex');
+            
+            // 提示：後端可透過 GET /api/products/:product_id/orders 取得依 order_time 排序的買家名單
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('flex');
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+// 2. 編輯商品彈窗
+        function openEditModal(productName) {
+            document.getElementById('modalTitle').innerText = '編輯商品：' + productName;
+            document.getElementById('inputName').value = productName;
             document.getElementById('productModal').classList.remove('hidden');
             document.getElementById('productModal').classList.add('flex');
         }
-
-        function openEditModal(name) {
-            document.getElementById('modalTitle').innerText = '編輯商品：' + name;
-            document.getElementById('inputName').value = name;
-            document.getElementById('productModal').classList.remove('hidden');
-            document.getElementById('productModal').classList.add('flex');
-        }
-
-        function closeProductModal() {
-            document.getElementById('productModal').classList.remove('flex');
-            document.getElementById('productModal').classList.add('hidden');
-        }
-
-        function toggleLimitInput() {
-            let checked = document.getElementById('isLimited').checked;
-            document.getElementById('limitContainer').style.display = checked ? 'block' : 'none';
-        }
-
-        function toggleDepositInput() {
-            let checked = document.getElementById('needDeposit').checked;
-            document.getElementById('depositContainer').style.display = checked ? 'block' : 'none';
-        }
-
-        function openArrivedModal(name, quota) {
-            document.getElementById('arrivedProductName').innerText = `商品：${name} (總配額：${quota} 隻)`;
+ // 3. 到貨入庫與指定派貨彈窗
+        function openArrivedModal(productName, quota) {
+            document.getElementById('arrivedProductName').innerText = `商品：${productName} (總配額：${quota} 隻)`;
             document.getElementById('arrivedModal').classList.remove('hidden');
             document.getElementById('arrivedModal').classList.add('flex');
         }
@@ -568,20 +614,14 @@
         }
 
         function confirmArrival() {
-            alert(`入庫成功！已依勾選名單完成派貨排程。`);
+            alert(`入庫成功！已成功更新商品狀態為已到貨，並依排隊順序完成派貨。`);
             closeArrivedModal();
+            if (typeof loadProducts === 'function') {
+                loadProducts();
+            }
         }
 
-        function openDetailModal(name) {
-            document.getElementById('detailModalTitle').innerText = `📊 預購人明細 (依下單時間排序) - ${name}`;
-            document.getElementById('detailModal').classList.remove('hidden');
-            document.getElementById('detailModal').classList.add('flex');
-        }
-
-        function closeDetailModal() {
-            document.getElementById('detailModal').classList.remove('flex');
-            document.getElementById('detailModal').classList.add('hidden');
-        }
+   
 
         function promptDate(badgeId, textPrefix) {
             let date = prompt("請選擇/輸入日期 (格式 YYYY-MM-DD)：", "2026-10-15");

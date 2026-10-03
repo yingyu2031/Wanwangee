@@ -303,6 +303,13 @@
             </button>
         </div>
     </div>
+    
+    <!-- 上架處理中動畫遮罩 -->
+    <script>window.isSubmitting = false;</script>
+    <div id="loadingOverlay" class="fixed inset-0 bg-black/70 z-50 flex flex-col items-center justify-center hidden backdrop-blur-sm">
+        <div class="w-12 h-12 border-4 border-brandYellow border-t-transparent rounded-full animate-spin mb-3"></div>
+        <p class="text-white font-bold text-sm tracking-wider">商品上架與圖片處理中，請稍候...</p>
+    </div>
 
     <!-- 2. 到貨入庫彈窗 -->
     <div id="arrivedModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
@@ -538,13 +545,8 @@
     }
         
     // 上架預購商品 API
-
-// 宣告一個全域開關，用來防止重複點擊
-let isSubmitting = false;
-
-async function saveProduct() {
-    // 如果已經正在送出，直接擋掉，不重複執行
-    if (isSubmitting) return;
+    async function saveProduct() {
+    if (window.isSubmitting) return; // 防止重複觸發
 
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
@@ -565,8 +567,10 @@ async function saveProduct() {
         return;
     }
 
-    // 開啟防重複開關
-    isSubmitting = true;
+    // 啟動防重複開關並顯示 Loading 遮罩
+    window.isSubmitting = true;
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    if (loadingOverlay) loadingOverlay.classList.remove('hidden');
 
     // 將圖片轉為 Base64 字串的輔助函式
     const convertToBase64 = (file) => {
@@ -581,6 +585,7 @@ async function saveProduct() {
     try {
         let image_url = '';
         if (file) {
+            // 將上傳的圖片轉成 Base64 純文字（大圖需要一點時間，這時動畫剛好派上用場）
             image_url = await convertToBase64(file);
         }
 
@@ -619,10 +624,12 @@ async function saveProduct() {
         console.error('API 錯誤:', error);
         alert('連線伺服器失敗或圖片檔案太大，請稍後再試。');
     } finally {
-        // 無論成功或失敗，最後一定要把開關打開，讓使用者可以再次操作
-        isSubmitting = false;
+        // 無論成功或失敗，關閉遮罩並解鎖開關
+        window.isSubmitting = false;
+        if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
 }
+
 
 
     // 切換每人限量輸入框的顯示狀態

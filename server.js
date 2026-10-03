@@ -115,7 +115,22 @@ initDB();
 // API 路由設計
 // ==========================================
 
-// 修改後的檢查會員綁定 API
+
+// --- 1. 管理員登入 API ---
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  if (username === 'Wanwangee' && password === 'P@ssw0rd') {
+    res.json({ success: true, message: '登入成功', token: 'wanwangee-admin-token-secret' });
+  } else {
+    res.status(401).json({ success: false, message: '帳號或密碼錯誤' });
+  }
+});
+
+
+
+// --- 2. 會員相關 API ---
+
+// 檢查會員綁定
 app.get('/api/users/check/:uid', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
@@ -131,7 +146,7 @@ app.get('/api/users/check/:uid', async (req, res) => {
   }
 });
 
-// --- 會員綁定與更新 API ---
+// --- 會員註冊&更新資料 ---
 app.post('/api/users/bind', async (req, res) => {
   try {
     const { uid, line_nickname, real_name, phone, email, address, birthday, gender } = req.body;
@@ -175,11 +190,10 @@ app.post('/api/users/bind', async (req, res) => {
   }
 });
 
-
-
-app.get('/api/products', async (req, res) => {
+// 後台取得所有會員清單
+app.get('/api/admin/users', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM products ORDER BY start_time DESC');
+    const result = await pool.query('SELECT * FROM users ORDER BY join_date DESC');
     res.json({ success: true, data: result.rows });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -187,8 +201,92 @@ app.get('/api/products', async (req, res) => {
 });
 
 
+// --- 3. 商品與預購專案 API ---
+app.get('/api/products', async (req, res) => {
+  try {
+    const { year_month } = req.query;
+    let query = 'SELECT * FROM products';
+    let values = [];
+    if (year_month && year_month !== 'all') {
+      query += ' WHERE year_month = $1';
+      values.push(year_month);
+    }
+    query += ' ORDER BY start_time DESC';
+    const result = await pool.query(query, values);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
+app.post('/api/products', async (req, res) => {
+  try {
+    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    const query = `
+      INSERT INTO products (name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING *;
+    `;
+    const values = [name, image_url || '', year_month, quota, start_time, end_time, price, pre_price, is_limited || false, limit_qty || 1, need_deposit || false, deposit_amount || 0, memo || '', status || 'pre_ordering'];
+    const result = await pool.query(query, values);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- 4. 訂單與派貨管理 API ---
+app.get('/api/admin/orders', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = `
+      SELECT o.*, u.line_nickname, u.real_name, u.phone, p.name AS product_name 
+      FROM orders o
+      JOIN users u ON o.uid = u.uid
+      JOIN products p ON o.product_id = p.id
+    `;
+    let values = [];
+    if (status) {
+      query += ' WHERE o.status = $1';
+      values.push(status);
+    }
+    query += ' ORDER BY o.order_time ASC';
+    const result = await pool.query(query, values);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.patch('/api/orders/:order_id/status', async (req, res) => {
+  try {
+    const { shipping_status, payment_status, memo } = req.body;
+    const orderId = req.params.order_id;
+
+    const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    if (orderRes.rows.length === 0) return res.status(404).json({ success: false, message: '找不到訂單' });
+    const order = orderRes.rows[0];
+
+    const newShippingStatus = shipping_status || order.shipping_status;
+    const newPaymentStatus = payment_status || order.payment_status;
+    const newMemo = memo !== undefined ? memo : order.memo;
+    const shippingDate = (shipping_status === 'shipped' && order.shipping_status !== 'shipped') ? new Date() : order.shipping_date;
+    const paymentDate = (payment_status === 'paid' && order.payment_status !== 'paid') ? new Date() : order.payment_date;
+
+    const updateQuery = `
+      UPDATE orders 
+      SET shipping_status = $1, payment_status = $2, memo = $3, shipping_date = $4, payment_date = $5
+      WHERE id = $6
+      RETURNING *;
+    `;
+    const updateRes = await pool.query(updateQuery, [newShippingStatus, newPaymentStatus, newMemo, shippingDate, paymentDate, orderId]);
+
+    res.json({ success: true, data: updateRes.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 app.listen(PORT, () => {
-  console.log(`TOYHEART Server is running on port ${PORT}`);
+  console.log(`Wanwangee Server is running on port ${PORT}`);
 });

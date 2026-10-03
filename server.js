@@ -115,14 +115,16 @@ initDB();
 // API 路由設計
 // ==========================================
 
-// --- 檢查會員是否已綁定過 ---
+// 修改後的檢查會員綁定 API
 app.get('/api/users/check/:uid', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
-    if (result.rows.length > 0 && result.rows[0].real_name && result.rows[0].phone) {
+    
+    // 只要資料庫找得到這筆 UID，就直接視為已綁定過！
+    if (result.rows.length > 0) {
       res.json({ success: true, bound: true, data: result.rows[0] });
     } else {
-      res.json({ success: true, bound: false, data: result.rows[0] || null });
+      res.json({ success: true, bound: false, data: null });
     }
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

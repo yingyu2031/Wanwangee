@@ -292,7 +292,7 @@
     <div id="arrivedModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-                <h3 class="text-sm font-bold text-brandYellow">🚚 到貨入庫與指定派貨</h3>
+                <h3 class="text-sm font-bold text-brandYellow">到貨入庫與指定派貨</h3>
                 <button onclick="closeArrivedModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
             </div>
             <p class="text-zinc-400" id="arrivedProductName">商品名稱</p>
@@ -445,7 +445,7 @@ async function loadProducts() {
                             </button>
                             <div class="space-x-1.5">
                                 <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-                                <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+                                <button onclick="openArrivedModal(${p.id}, '${p.name}', ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
                             </div>
                         </div>
                     </div>
@@ -857,25 +857,72 @@ function closeDetailModal() {
 }
 
 
- // 到貨入庫與指定派貨彈窗
-        function openArrivedModal(productName, quota) {
-            document.getElementById('arrivedProductName').innerText = `商品：${productName} (總配額：${quota} 隻)`;
-            document.getElementById('arrivedModal').classList.remove('hidden');
-            document.getElementById('arrivedModal').classList.add('flex');
-        }
+// 記錄目前正在操作到貨入庫的商品 ID
+let currentArrivedProductId = null;
 
-        function closeArrivedModal() {
-            document.getElementById('arrivedModal').classList.remove('flex');
-            document.getElementById('arrivedModal').classList.add('hidden');
-        }
+// 點擊商品卡片上的「到貨入庫」按鈕時呼叫
+function openArrivedModal(productId, productName, maxQuota) {
+    currentArrivedProductId = productId;
+    
+    document.getElementById('arrivedProductName').innerText = `商品名稱：${productName || '未知商品'}`;
+    document.getElementById('actualArrivalQty').value = maxQuota || 10; // 預設帶入總配額或 10
 
-        function confirmArrival() {
-            alert(`入庫成功！已成功更新商品狀態為已到貨，並依排隊順序完成派貨。`);
+    const modal = document.getElementById('arrivedModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+// 關閉到貨入庫彈窗
+function closeArrivedModal() {
+    currentArrivedProductId = null;
+    const modal = document.getElementById('arrivedModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
+
+// 確認入庫並分派選定預購人
+async function confirmArrival() {
+    if (!currentArrivedProductId) {
+        alert('找不到商品編號');
+        return;
+    }
+
+    const arrivalQty = document.getElementById('actualArrivalQty').value;
+    if (!arrivalQty || arrivalQty <= 0) {
+        alert('請輸入正確的到貨數量！');
+        return;
+    }
+
+    const isConfirmed = confirm(`確定要入庫 ${arrivalQty} 個名額，並自動依下單順序派貨給最早預購的買家嗎？`);
+    if (!isConfirmed) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${currentArrivedProductId}/allocate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ arrival_qty: arrivalQty })
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            alert(result.message);
             closeArrivedModal();
             if (typeof loadProducts === 'function') {
-                loadProducts();
+                loadProducts(); // 重新整理列表
             }
+        } else {
+            alert('派貨失敗：' + (result.message || '未知錯誤'));
         }
+    } catch (error) {
+        console.error('API 錯誤:', error);
+        alert('連線伺服器失敗，請稍後再試。');
+    }
+}
+
 
    
 

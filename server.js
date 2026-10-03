@@ -86,6 +86,7 @@ const initDB = async () => {
         balance_amount NUMERIC(10, 2) DEFAULT 0,
         order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status VARCHAR(50) DEFAULT 'trading',
+        is_allocated BOOLEAN DEFAULT FALSE,
         shipping_status VARCHAR(50) DEFAULT 'unshipped',
         shipping_date TIMESTAMP,
         payment_status VARCHAR(50) DEFAULT 'unpaid',

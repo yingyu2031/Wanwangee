@@ -203,7 +203,7 @@
         <!-- ================= 區塊 C：會員名單管理 (新增) ================= -->
         <div id="membersSection" class="space-y-4 hidden">
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center">
-                <h3 class="text-sm font-bold text-brandYellow">👑 已綁定會員名單列表</h3>
+                <h3 class="text-sm font-bold text-brandYellow">會員名單列表</h3>
                 <span id="memberCount" class="text-xs text-zinc-400 font-mono">總人數: 0</span>
             </div>
 
@@ -381,7 +381,7 @@
                     loadOrders(currentOrderStatus);
                     loadMembers();
                 } else {
-                    alert('❌ 帳號或密碼錯誤 (正確為 Wanwangee / P@ssw0rd)');
+                    alert('❌ 帳號或密碼錯誤');
                 }
             } catch (err) {
                 console.error(err);

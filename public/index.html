@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TOYHEART - 專業玩具商務後台</title>
+    <title>Wanwangee 玩玩具</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -66,12 +66,12 @@
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
             </svg>
             <div>
-                <span class="text-[10px] font-bold tracking-widest block opacity-75 leading-none">TOYHEART ADMIN</span>
-                <h1 class="text-base font-black tracking-wider">玩具預購與訂單管理後台</h1>
+                <span class="text-[10px] font-bold tracking-widest block opacity-75 leading-none">Wanwangee</span>
+                <h1 class="text-base font-black tracking-wider">商品/會員管理</h1>
             </div>
         </div>
         <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner flex items-center space-x-2">
-            <span>👑 管理員模式</span>
+            <span>管理後台</span>
             <button onclick="logout()" class="text-zinc-400 hover:text-white text-[10px] underline ml-2">登出</button>
         </div>
     </header>
@@ -82,13 +82,13 @@
         <!-- 頁籤切換 (保留原設計，並新增「會員名單管理」按鈕) -->
         <div class="flex space-x-3 border-b border-zinc-800 pb-3 overflow-x-auto">
             <button onclick="switchAdminTab('products')" id="tabProducts" class="bg-brandYellow text-brandBlack px-5 py-2.5 rounded-xl text-xs font-black transition shadow whitespace-nowrap">
-                📦 商品上架與預購管理
+                商品上架與預購管理
             </button>
             <button onclick="switchAdminTab('fulfillment')" id="tabFulfillment" class="bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-brandYellow px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap">
-                🚚 到貨與出貨對帳名單
+                到貨與出貨對帳名單
             </button>
             <button onclick="switchAdminTab('members')" id="tabMembers" class="bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-brandYellow px-5 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap">
-                👥 會員名單管理
+               會員名單管理
             </button>
         </div>
 

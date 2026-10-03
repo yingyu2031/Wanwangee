@@ -48,6 +48,7 @@ const initDB = async () => {
         line_nickname VARCHAR(255) DEFAULT '',
         real_name VARCHAR(255) DEFAULT '',
         phone VARCHAR(50) DEFAULT '',
+        email VARCHAR(255) DEFAULT '',
         address TEXT DEFAULT '',
         birthday VARCHAR(50) DEFAULT '',
         gender VARCHAR(20) DEFAULT '',
@@ -118,7 +119,6 @@ initDB();
 app.get('/api/users/check/:uid', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
-    // 判斷是否有紀錄且真實姓名、手機不為空
     if (result.rows.length > 0 && result.rows[0].real_name && result.rows[0].phone) {
       res.json({ success: true, bound: true, data: result.rows[0] });
     } else {
@@ -129,24 +129,25 @@ app.get('/api/users/check/:uid', async (req, res) => {
   }
 });
 
-// --- 1. 會員相關 API ---
+// 綁定或更新會員資料
 app.post('/api/users/bind', async (req, res) => {
   try {
-    const { uid, line_nickname, real_name, phone, address, birthday, gender } = req.body;
+    const { uid, line_nickname, real_name, phone, email, address, birthday, gender } = req.body;
     const query = `
-      INSERT INTO users (uid, line_nickname, real_name, phone, address, birthday, gender, join_date)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+      INSERT INTO users (uid, line_nickname, real_name, phone, email, address, birthday, gender, join_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       ON CONFLICT (uid) 
       DO UPDATE SET 
         line_nickname = COALESCE($2, users.line_nickname),
         real_name = COALESCE($3, users.real_name),
         phone = COALESCE($4, users.phone),
-        address = COALESCE($5, users.address),
-        birthday = COALESCE($6, users.birthday),
-        gender = COALESCE($7, users.gender)
+        email = COALESCE($5, users.email),
+        address = COALESCE($6, users.address),
+        birthday = COALESCE($7, users.birthday),
+        gender = COALESCE($8, users.gender)
       RETURNING *;
     `;
-    const values = [uid, line_nickname, real_name, phone, address, birthday, gender];
+    const values = [uid, line_nickname, real_name, phone, email || '', address, birthday, gender];
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
@@ -164,145 +165,10 @@ app.get('/api/users/:uid', async (req, res) => {
   }
 });
 
-// --- 2. 商品與預購專案 API ---
 app.get('/api/products', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM products ORDER BY start_time DESC');
     res.json({ success: true, data: result.rows });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-app.post('/api/products', async (req, res) => {
-  try {
-    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
-    const query = `
-      INSERT INTO products (name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-      RETURNING *;
-    `;
-    const values = [name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited || false, limit_qty || 1, need_deposit || false, deposit_amount || 0, memo || '', status || 'pre_ordering'];
-    const result = await pool.query(query, values);
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --- 3. 預購與訂單主檔 API ---
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { uid, product_id, quantity, memo } = req.body;
-    
-    const prodRes = await pool.query('SELECT * FROM products WHERE id = $1', [product_id]);
-    if (prodRes.rows.length === 0) return res.status(404).json({ success: false, message: '商品不存在' });
-    const product = prodRes.rows[0];
-
-    const now = new Date();
-    if (now < new Date(product.start_time) || now > new Date(product.end_time)) {
-      return res.status(400).json({ success: false, message: '目前不在預購時間範圍內' });
-    }
-
-    if (product.is_limited && quantity > product.limit_qty) {
-      return res.status(400).json({ success: false, message: `每人限購 ${product.limit_qty} 隻` });
-    }
-
-    const total_amount = product.pre_price * quantity;
-    const deposit_paid = product.need_deposit ? (product.deposit_amount * quantity) : 0;
-    const balance_amount = total_amount - deposit_paid;
-
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(100 + Math.random() * 900);
-    const order_no = `#TH${dateStr}${randomNum}`;
-
-    const query = `
-      INSERT INTO orders (order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, order_time, status, shipping_status, payment_status, memo)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP, 'trading', 'unshipped', 'unpaid', $8)
-      RETURNING *;
-    `;
-    const values = [order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, memo || ''];
-    const result = await pool.query(query, values);
-
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// 取得特定商品的預購排隊明細（依下單時間排序，實現先後排隊分派）
-app.get('/api/products/:product_id/orders', async (req, res) => {
-  try {
-    const query = `
-      SELECT o.*, u.line_nickname, u.real_name, u.phone 
-      FROM orders o
-      JOIN users u ON o.uid = u.uid
-      WHERE o.product_id = $1
-      ORDER BY o.order_time ASC;
-    `;
-    const result = await pool.query(query, [req.params.product_id]);
-    res.json({ success: true, data: result.rows });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// 後台：取消訂單與名額改派
-app.post('/api/orders/:order_id/cancel-and-reassign', async (req, res) => {
-  try {
-    const { admin_name, new_uid } = req.body;
-    const orderId = req.params.order_id;
-
-    const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
-    if (orderRes.rows.length === 0) return res.status(404).json({ success: false, message: '找不到該訂單' });
-    const targetOrder = orderRes.rows[0];
-
-    await pool.query("UPDATE orders SET status = 'cancelled' WHERE id = $1", [orderId]);
-
-    const auditQuery = `
-      INSERT INTO audit_logs (admin_name, action, target_order_no, detail, created_at)
-      VALUES ($1, 'CANCEL_AND_REASSIGN', $2, $3, CURRENT_TIMESTAMP)
-      RETURNING *;
-    `;
-    const detail = `取消訂單 ${targetOrder.order_no}，並將名額改派給 UID: ${new_uid || '未指定'}`;
-    const auditRes = await pool.query(auditQuery, [admin_name || '管理員', targetOrder.order_no, detail]);
-
-    res.json({ success: true, message: '訂單已取消並完成改派紀錄', audit: auditRes.rows[0] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// 後台：更新出貨與收款狀態
-app.patch('/api/orders/:order_id/status', async (req, res) => {
-  try {
-    const { admin_name, shipping_status, payment_status, memo } = req.body;
-    const orderId = req.params.order_id;
-
-    const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
-    if (orderRes.rows.length === 0) return res.status(404).json({ success: false, message: '找不到訂單' });
-    const order = orderRes.rows[0];
-
-    const newShippingStatus = shipping_status || order.shipping_status;
-    const newPaymentStatus = payment_status || order.payment_status;
-    const newMemo = memo !== undefined ? memo : order.memo;
-    const shippingDate = (shipping_status === 'shipped' && order.shipping_status !== 'shipped') ? new Date() : order.shipping_date;
-    const paymentDate = (payment_status === 'paid' && order.payment_status !== 'paid') ? new Date() : order.payment_date;
-
-    const updateQuery = `
-      UPDATE orders 
-      SET shipping_status = $1, payment_status = $2, memo = $3, shipping_date = $4, payment_date = $5
-      WHERE id = $6
-      RETURNING *;
-    `;
-    const updateRes = await pool.query(updateQuery, [newShippingStatus, newPaymentStatus, newMemo, shippingDate, paymentDate, orderId]);
-
-    await pool.query(`
-      INSERT INTO audit_logs (admin_name, action, target_order_no, detail, created_at)
-      VALUES ($1, 'UPDATE_ORDER_STATUS', $2, $3, CURRENT_TIMESTAMP);
-    `, [admin_name || '管理員', order.order_no, `更新出貨狀態: ${newShippingStatus}, 收款狀態: ${newPaymentStatus}`]);
-
-    res.json({ success: true, data: updateRes.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -91,50 +91,27 @@
             </button>
         </div>
 
-        <!-- ================= 區塊 A：商品上架與預購管理 ================= -->
-        <div id="productsSection" class="space-y-4">
-            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
-                <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <span class="text-xs text-zinc-400 whitespace-nowrap">發售年月：</span>
-                    <select id="filterYearMonth" onchange="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none">
-                        <option value="all">全部月份</option>
-                        <option value="2026-09">2026 年 09 月</option>
-                        <option value="2026-10" selected>2026 年 10 月</option>
-                    </select>
-                </div>
-                <div class="flex items-center space-x-2 w-full sm:w-auto">
-                    <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
-                    <button onclick="openProductModal()" class="bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2.5 rounded-xl transition shadow whitespace-nowrap">
-                        ＋ 上架新商品
-                    </button>
-                </div>
-            </div>
-
-            <!-- 商品清單網格 -->
-            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
-                    <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
-                        <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
-                        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
-                    </div>
-                    <div class="space-y-1 text-xs">
-                        <h3 class="text-sm font-bold text-white leading-snug">RX-93ff v GUNDAM Statue</h3>
-                        <p class="text-zinc-400">定價: NT$ 4,999 | <span class="text-brandYellow font-bold">預購價: NT$ 4,280</span></p>
-                        <p class="text-zinc-400">訂金: NT$ 1,500 (每人限購 2 隻)</p>
-                        <p class="text-zinc-400">已預購/配額: <span class="text-brandYellow font-bold">15 / 30 组</span></p>
-                    </div>
-                    <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
-                        <button onclick="openDetailModal('RX-93ff v GUNDAM')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
-                            📊 預購人明細
-                        </button>
-                        <div class="space-x-1.5">
-                            <button onclick="openEditModal('RX-93ff v GUNDAM')" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-                            <button onclick="openArrivedModal('RX-93ff v GUNDAM', 30)" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- ================= 區塊 A：商品上架與預購管理 ================= -->
+<div id="productsSection" class="space-y-4">
+    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <span class="text-xs text-zinc-400 whitespace-nowrap">發售年月：</span>
+            <!-- 改為文字輸入欄位，預設空白代表全部顯示 -->
+            <input type="text" id="filterYearMonth" placeholder="例如: 2026-10 (留空查全部)" oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none w-full sm:w-48">
         </div>
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
+            <button onclick="openProductModal()" class="bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2.5 rounded-xl transition shadow whitespace-nowrap">
+                ＋ 上架新商品
+            </button>
+        </div>
+    </div>
+
+    <!-- 商品清單網格 -->
+    <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- 動態載入商品 -->
+    </div>
+</div>
 
         <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
         <div id="fulfillmentSection" class="space-y-4 hidden">
@@ -432,43 +409,52 @@
             loadOrders(subTab);
         }
 
-        // 載入商品 API
-        async function loadProducts() {
-            const ym = document.getElementById('filterYearMonth').value;
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/products?year_month=${ym}`);
-                const result = await res.json();
-                const grid = document.getElementById('productsGrid');
-                if (result.success && result.data.length > 0) {
-                    grid.innerHTML = result.data.map(p => `
-                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
-                            <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
-    <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
-    ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
-</div>
-                            <div class="space-y-1 text-xs">
-                                <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
-                                <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
-                                <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
-                            </div>
-<div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
-    <button onclick="openDetailModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
-        📊 預購人明細
-    </button>
-    <div class="space-x-1.5">
-        <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-        <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
-    </div>
-</div>
+// 載入商品 API
+async function loadProducts() {
+    const ym = document.getElementById('filterYearMonth').value;
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${ym}`);
+        const result = await res.json();
+        const grid = document.getElementById('productsGrid');
+        
+        if (result.success && result.data.length > 0) {
+            grid.innerHTML = result.data.map(p => {
+                // 格式化預購期間顯示 (只取前 10 碼 YYYY-MM-DD)
+                const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
+                const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
+                const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
+
+                return `
+                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
+                        <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
+                            <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
+                            ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
                         </div>
-                    `).join('');
-                } else {
-                    grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">目前尚無商品資料</div>';
-                }
-            } catch (err) {
-                console.error(err);
-            }
+                        <div class="space-y-1 text-xs">
+                            <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
+                            <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
+                            <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
+                            <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
+                        </div>
+                        <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
+                            <button onclick="openDetailModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
+                                📊 預購人明細
+                            </button>
+                            <div class="space-x-1.5">
+                                <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
+                                <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } else {
+            grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">目前尚無商品資料</div>';
         }
+    } catch (err) {
+        console.error(err);
+    }
+}
 
         // 載入訂單 API
         async function loadOrders(status) {

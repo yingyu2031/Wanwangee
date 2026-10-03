@@ -34,31 +34,47 @@
                 <h1 class="text-base font-black tracking-wider">會員專屬資料綁定</h1>
             </div>
         </div>
-        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner" id="memberBadge">
-            ✨ VIP 預備軍
+        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner">
+            👑 綁定中心
         </div>
     </header>
 
-    <!-- 主要表單內容區 -->
+    <!-- 主要內容區 -->
     <main class="p-4 sm:p-6 max-w-lg mx-auto w-full flex-grow space-y-6">
         
+        <!-- LINE 個人名片小卡 (參考您提供的設計風格) -->
+        <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-3xl shadow-xl flex items-center space-x-4">
+            <!-- 頭像與 LINE 徽章 -->
+            <div class="relative flex-shrink-0">
+                <img id="lineAvatar" src="https://via.placeholder.com/150" alt="LINE 頭像" class="w-16 h-16 rounded-full object-cover border-2 border-brandYellow">
+                <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow border border-brandBlack">
+                    LINE
+                </span>
+            </div>
+            <!-- 暱稱與會員等級 -->
+            <div class="flex-grow">
+                <div class="flex items-center space-x-2">
+                    <h2 id="lineNickname" class="text-base font-black text-white tracking-wide">載入中...</h2>
+                    <span class="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                        VIP 尊榮會員
+                    </span>
+                </div>
+                <p id="lineUidDisplay" class="text-[11px] text-zinc-500 font-mono mt-0.5 truncate max-w-[200px]">UID: 讀取中...</p>
+            </div>
+        </div>
+
+        <!-- 填寫真實姓名與收件資料表單 -->
         <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-xl space-y-4">
             <div class="border-b border-zinc-800 pb-3">
-                <h2 class="text-sm font-bold text-brandYellow">📝 填寫收件與會員資料</h2>
-                <p class="text-xs text-zinc-400 mt-1">完成綁定後即可解鎖一鍵預購、訂單查詢與到貨自動通知功能！</p>
+                <h3 class="text-sm font-bold text-brandYellow">📝 填寫收件與真實身分資料</h3>
+                <p class="text-xs text-zinc-400 mt-1">為了確保商品寄送與預購對帳無誤，請填寫您的真實姓名與常用資料。</p>
             </div>
 
             <form id="registerForm" onsubmit="submitMemberData(event)" class="space-y-3 text-xs">
-                <!-- LINE 顯示名稱 (唯讀) -->
+                <!-- 真實姓名 -->
                 <div>
-                    <label class="block text-zinc-400 mb-1">LINE 暱稱</label>
-                    <input type="text" id="lineNickname" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-300 font-bold">
-                </div>
-
-                <!-- LINE UID (隱藏或唯讀識別) -->
-                <div>
-                    <label class="block text-zinc-400 mb-1">LINE UID (系統辨識碼)</label>
-                    <input type="text" id="lineUid" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-500 font-mono text-[11px]">
+                    <label class="block text-zinc-400 mb-1">真實姓名 <span class="text-red-400">*</span></label>
+                    <input type="text" id="realName" required placeholder="例如：陳大文 (請與收件人相符)" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
                 </div>
 
                 <!-- 手機號碼 -->
@@ -89,6 +105,10 @@
                     </div>
                 </div>
 
+                <!-- 隱藏的 LINE UID 欄位 (自動帶入後端) -->
+                <input type="hidden" id="lineUid">
+                <input type="hidden" id="lineNicknameHidden">
+
                 <!-- 提交按鈕 -->
                 <button type="submit" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg mt-4">
                     確認送出並完成綁定
@@ -104,9 +124,7 @@
 
     <!-- LIFF 初始化與前端互動邏輯 -->
     <script>
-        // 初始化 LIFF
         document.addEventListener("DOMContentLoaded", function () {
-            // 請替換成您的 LIFF ID (例如：1234567890-AbCdEfGh)
             const MY_LIFF_ID = "YOUR_LIFF_ID_HERE"; 
 
             liff.init({ liffId: MY_LIFF_ID })
@@ -115,8 +133,13 @@
                         liff.login();
                     } else {
                         liff.getProfile().then(profile => {
-                            document.getElementById('lineNickname').value = profile.displayName;
+                            document.getElementById('lineNickname').innerText = profile.displayName;
+                            document.getElementById('lineNicknameHidden').value = profile.displayName;
                             document.getElementById('lineUid').value = profile.userId;
+                            document.getElementById('lineUidDisplay').innerText = `UID: ${profile.userId}`;
+                            if (profile.pictureUrl) {
+                                document.getElementById('lineAvatar').src = profile.pictureUrl;
+                            }
                         }).catch(err => {
                             console.error('取得 LINE Profile 失敗', err);
                         });
@@ -124,31 +147,31 @@
                 })
                 .catch((err) => {
                     console.log('LIFF 初始化失敗（若在外部瀏覽器測試為正常現象）', err);
-                    // 測試用模擬資料（方便您在一般瀏覽器預覽畫面）
-                    document.getElementById('lineNickname').value = "測試玩家小傑";
+                    // 測試用模擬資料
+                    document.getElementById('lineNickname').innerText = "測試玩家小傑";
+                    document.getElementById('lineNicknameHidden').value = "測試玩家小傑";
                     document.getElementById('lineUid').value = "U_mock_uid_123456789";
+                    document.getElementById('lineUidDisplay').innerText = "UID: U_mock_uid_123456789";
                 });
         });
 
-        // 提交會員資料到 Node.js 後端 API
         function submitMemberData(event) {
             event.preventDefault();
 
             const memberData = {
                 uid: document.getElementById('lineUid').value,
-                line_nickname: document.getElementById('lineNickname').value,
+                line_nickname: document.getElementById('lineNicknameHidden').value,
+                real_name: document.getElementById('realName').value,
                 phone: document.getElementById('phone').value,
                 address: document.getElementById('address').value,
                 birthday: document.getElementById('birthday').value,
                 gender: document.getElementById('gender').value
             };
 
-            // 這裡未來會串接您的後端 API (例如 fetch('/api/users/register', ...))
             console.log("準備送出會員資料：", memberData);
 
-            alert('🎉 會員資料綁定成功！歡迎加入 TOYHEART 收藏行列。');
+            alert('🎉 會員資料與真實姓名綁定成功！');
             
-            // 若在 LINE App 內可自動關閉 LIFF 視窗
             if (liff.isInClient()) {
                 liff.closeWindow();
             }

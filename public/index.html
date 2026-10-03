@@ -569,7 +569,12 @@ async function openEditModal(productId) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/products`);
         const result = await res.json();
-
+        // 顯示目前圖片狀態
+        const imageInput = document.getElementById('inputImage');
+            if (product.image_url) {
+            // 如果原本有圖片，可以在旁邊加個提示或預覽
+            console.log("此商品已有圖片");
+            }
         if (result.success && result.data) {
             const product = result.data.find(p => p.id === productId);
 

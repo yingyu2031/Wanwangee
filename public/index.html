@@ -49,7 +49,7 @@
             </button>
         </div>
 
-        <!-- ================= 區塊 A：商品上架與預購清單 (圖片在上) ================= -->
+        <!-- ================= 區塊 A：商品上架與預購管理 (圖片在上、明細按鈕修正) ================= -->
         <div id="productsSection" class="space-y-4">
             <!-- 篩選列 -->
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -85,7 +85,8 @@
                         <p class="text-zinc-400">已預購/配額: <span class="text-brandYellow font-bold">15 / 30 组</span></p>
                     </div>
                     <div class="pt-2 border-t border-zinc-800 flex items-center justify-between">
-                        <button onclick="openDetailModal('RX-93ff v GUNDAM')" class="text-[11px] text-brandYellow hover:underline font-bold">
+                        <!-- 修正為按鈕式，點擊可開啟明細 -->
+                        <button onclick="openDetailModal('RX-93ff v GUNDAM')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-[11px] px-3 py-1.5 rounded-lg border border-zinc-700 font-bold transition">
                             📊 預購人明細
                         </button>
                         <div class="space-x-1">
@@ -97,61 +98,65 @@
             </div>
         </div>
 
-        <!-- ================= 區塊 B：到貨與出貨管理名單 (多頁籤 + 標題篩選) ================= -->
+        <!-- ================= 區塊 B：到貨與出貨管理名單 (書籤式分頁 + 預購人在第一欄) ================= -->
         <div id="fulfillmentSection" class="space-y-4 hidden">
-            <!-- 搜尋與次分頁籤 -->
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-                    <div class="flex items-center space-x-2 w-full sm:w-auto">
-                        <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2 text-white w-full sm:w-72 focus:outline-none focus:border-brandYellow">
-                    </div>
+                    <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2 text-white w-full sm:w-72 focus:outline-none focus:border-brandYellow">
                     <button onclick="batchNotifyLine()" class="bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2 rounded-xl transition shadow whitespace-nowrap">
                         🚀 批次群發 LINE 通知
                     </button>
                 </div>
 
-                <!-- 狀態子分頁籤 -->
-                <div class="flex space-x-2 border-t border-zinc-800 pt-3 text-xs font-bold">
-                    <button onclick="switchSubTab('pending')" id="subTabPending" class="bg-brandYellow text-brandBlack px-3.5 py-1.5 rounded-lg transition">還未處理 (1)</button>
-                    <button onclick="switchSubTab('completed')" id="subTabCompleted" class="bg-zinc-800 text-zinc-300 hover:text-white px-3.5 py-1.5 rounded-lg transition">出貨且已收款成交 (0)</button>
-                    <button onclick="switchSubTab('cancelled')" id="subTabCancelled" class="bg-zinc-800 text-zinc-300 hover:text-white px-3.5 py-1.5 rounded-lg transition">已取消/改派 (0)</button>
+                <!-- 書籤式分頁籤 (交易中、成交、取消) -->
+                <div class="flex space-x-1 border-b border-zinc-800 pb-2 text-xs font-bold">
+                    <button onclick="switchSubTab('trading')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition">交易中 (1)</button>
+                    <button onclick="switchSubTab('completed')" id="subTabCompleted" class="bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2 rounded-t-xl transition">成交 (0)</button>
+                    <button onclick="switchSubTab('cancelled')" id="subTabCancelled" class="bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2 rounded-t-xl transition">取消 (0)</button>
                 </div>
             </div>
 
-            <!-- 名單表格 (支援標題點擊篩選) -->
+            <!-- 名單表格 (預購人在第一欄) -->
             <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800">
                             <tr>
                                 <th class="p-3"><input type="checkbox"></th>
-                                <th class="p-3 cursor-pointer hover:text-brandYellow" onclick="sortBy('time')">下單時間 ↕</th>
-                                <th class="p-3 cursor-pointer hover:text-brandYellow" onclick="sortBy('customer')">預購人 ↕</th>
-                                <th class="p-3 cursor-pointer hover:text-brandYellow" onclick="sortBy('product')">商品名稱 ↕</th>
+                                <th class="p-3">預購人 (買家)</th>
+                                <th class="p-3">商品名稱</th>
                                 <th class="p-3 text-center">數量</th>
-                                <th class="p-3">寄出日期 / 付款日</th>
+                                <th class="p-3">寄出註記</th>
+                                <th class="p-3">收款註記</th>
                                 <th class="p-3">通知紀錄</th>
-                                <th class="p-3 text-right">管理操作</th>
+                                <th class="p-3 text-right">明細操作</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-zinc-800 text-zinc-300">
                             <tr>
                                 <td class="p-3"><input type="checkbox"></td>
-                                <td class="p-3 font-mono text-zinc-400">09-01 12:30</td>
-                                <td class="p-3 font-bold text-white">玩家小傑 <span class="text-[10px] text-zinc-500 block">(@jack)</span></td>
+                                <!-- 預購人移至第一欄 -->
+                                <td class="p-3 font-bold text-white">玩家小傑 <span class="text-[10px] text-zinc-500 block">(@jack_toy)</span></td>
                                 <td class="p-3">RX-93ff v GUNDAM</td>
                                 <td class="p-3 text-center font-bold">1</td>
-                                <td class="p-3 text-[11px] text-zinc-400">
-                                    寄出：<input type="date" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 mb-1"><br>
-                                    收款：<input type="date" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1">
+                                <!-- 寄出註記 -->
+                                <td class="p-3">
+                                    <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold block mb-1 w-max">未寄出</span>
+                                    <input type="date" onchange="updateShipping(this)" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[11px]">
                                 </td>
-                                <td class="p-3 text-[11px] text-zinc-400">
-                                    上次通知：<br><span class="text-brandYellow">2026-10-02 10:00</span>
+                                <!-- 收款註記 -->
+                                <td class="p-3">
+                                    <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold block mb-1 w-max">未收款</span>
+                                    <input type="date" onchange="updatePayment(this)" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[11px]">
                                 </td>
-                                <td class="p-3 text-right space-y-1">
-                                    <button onclick="sendDirectLine('玩家小傑')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2.5 py-1 rounded border border-zinc-700 block w-full text-center">💬 重發通知</button>
-                                    <button onclick="markComplete('玩家小傑')" class="bg-green-600/20 text-green-400 px-2.5 py-1 rounded border border-green-500/30 block w-full text-center">完成出貨收款</button>
-                                    <button onclick="cancelAndReassign('玩家小傑')" class="bg-red-500/10 text-red-400 px-2.5 py-1 rounded border border-red-500/30 block w-full text-center">客人取消(改派)</button>
+                                <!-- 通知註記 -->
+                                <td class="p-3 text-[11px] text-zinc-400">
+                                    上次：<span class="text-brandYellow block mb-1">10-02 10:00</span>
+                                    <button onclick="resendNotification('玩家小傑')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-1 rounded border border-zinc-700">再次通知</button>
+                                </td>
+                                <td class="p-3 text-right space-x-1">
+                                    <button onclick="editFulfillmentDetail('玩家小傑')" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-2 py-1 rounded">編輯</button>
+                                    <button onclick="deleteFulfillmentDetail('玩家小傑')" class="bg-red-500/10 text-red-400 px-2 py-1 rounded hover:bg-red-500/20">刪除</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -161,7 +166,7 @@
         </div>
     </main>
 
-    <!-- 1. 新增/編輯商品彈窗 (欄位不重疊、限量改勾選) -->
+    <!-- 1. 新增/編輯商品彈窗 (不重疊、限量改勾選、其餘必填) -->
     <div id="productModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3 max-h-[90vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -170,45 +175,46 @@
             </div>
             <div class="space-y-3">
                 <div>
-                    <label class="block text-zinc-400 mb-1">商品品名</label>
-                    <input type="text" id="inputName" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                    <label class="block text-zinc-400 mb-1">商品品名 <span class="text-red-400">*</span></label>
+                    <input type="text" id="inputName" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                 </div>
                 <div>
-                    <label class="block text-zinc-400 mb-1">商品圖片</label>
+                    <label class="block text-zinc-400 mb-1">商品圖片 (選填)</label>
                     <input type="file" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400">
                 </div>
+                <!-- 欄位獨立不重疊 -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-zinc-400 mb-1">預計發售年月</label>
-                        <input type="month" value="2026-10" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">預計發售年月 <span class="text-red-400">*</span></label>
+                        <input type="month" id="inputYM" required value="2026-10" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
-                        <label class="block text-zinc-400 mb-1">總配額數量</label>
-                        <input type="number" value="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">總配額數量 <span class="text-red-400">*</span></label>
+                        <input type="number" id="inputQuota" required value="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-zinc-400 mb-1">預購開始日</label>
-                        <input type="datetime-local" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">預購開始日 <span class="text-red-400">*</span></label>
+                        <input type="datetime-local" id="inputStart" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
-                        <label class="block text-zinc-400 mb-1">預購結束日 (結單日)</label>
-                        <input type="datetime-local" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">預購結束日 <span class="text-red-400">*</span></label>
+                        <input type="datetime-local" id="inputEnd" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-zinc-400 mb-1">官方定價</label>
-                        <input type="number" placeholder="4999" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">官方定價 <span class="text-red-400">*</span></label>
+                        <input type="number" id="inputPrice" required placeholder="4999" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div>
-                        <label class="block text-zinc-400 mb-1">優惠預購價</label>
-                        <input type="number" placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <label class="block text-zinc-400 mb-1">優惠預購價 <span class="text-red-400">*</span></label>
+                        <input type="number" id="inputPrePrice" required placeholder="4280" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
 
-                <!-- 限量勾選區塊 -->
+                <!-- 限量勾選 -->
                 <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
                     <div class="flex items-center space-x-2">
                         <input type="checkbox" id="isLimited" onchange="toggleLimitInput()" class="rounded bg-zinc-800 border-zinc-700">
@@ -220,7 +226,7 @@
                     </div>
                 </div>
 
-                <!-- 訂金勾選區塊 -->
+                <!-- 訂金勾選 -->
                 <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
                     <div class="flex items-center space-x-2">
                         <input type="checkbox" id="needDeposit" checked onchange="toggleDepositInput()" class="rounded bg-zinc-800 border-zinc-700">
@@ -238,7 +244,7 @@
         </div>
     </div>
 
-    <!-- 2. 到貨入庫彈窗 (含勾選派貨預購人) -->
+    <!-- 2. 到貨入庫彈窗 -->
     <div id="arrivedModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -250,21 +256,44 @@
                 <label class="block text-zinc-300 font-bold">本次實際到貨數量：</label>
                 <input type="number" id="actualArrivalQty" value="18" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white font-bold text-sm">
             </div>
-            <div class="space-y-1">
-                <label class="block text-zinc-300 font-bold">勾選要優先派貨的預購人（依下單時間先後排序）：</label>
-                <div class="max-h-40 overflow-y-auto bg-zinc-950 p-2 rounded-xl border border-zinc-800 space-y-1.5">
-                    <label class="flex items-center space-x-2 text-zinc-300 cursor-pointer">
-                        <input type="checkbox" checked class="rounded bg-zinc-800 border-zinc-700">
-                        <span>[09-01 12:30] 玩家小傑 (@jack) - 1 隻</span>
-                    </label>
-                    <label class="flex items-center space-x-2 text-zinc-300 cursor-pointer">
-                        <input type="checkbox" checked class="rounded bg-zinc-800 border-zinc-700">
-                        <span>[09-01 14:10] 阿豪收藏庫 (@hao) - 2 隻</span>
-                    </label>
-                </div>
-            </div>
             <button onclick="confirmArrival()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition shadow">
                 確認入庫並分派選定預購人
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. 預購人明細彈窗 -->
+    <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">📊 預購人明細 (依下單時間排序)</h3>
+                <button onclick="closeDetailModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <div class="max-h-60 overflow-y-auto space-y-2">
+                <table class="w-full text-left">
+                    <thead class="text-zinc-500 border-b border-zinc-800 pb-1">
+                        <tr>
+                            <th class="pb-2">下單時間</th>
+                            <th class="pb-2">買家暱稱</th>
+                            <th class="pb-2 text-center">數量</th>
+                            <th class="pb-2 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-800/60 text-zinc-300">
+                        <tr>
+                            <td class="py-2 font-mono text-[10px] text-zinc-400">2026-09-01 12:30</td>
+                            <td class="py-2">玩家小傑 (@jack_toy)</td>
+                            <td class="py-2 text-center font-bold">1</td>
+                            <td class="py-2 text-right space-x-1">
+                                <button onclick="editDetailItem('玩家小傑')" class="bg-zinc-800 px-2 py-1 rounded text-zinc-200">編輯</button>
+                                <button onclick="deleteDetailItem('玩家小傑')" class="bg-red-500/10 text-red-400 px-2 py-1 rounded">刪除</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button onclick="closeDetailModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-xl transition">
+                關閉視窗
             </button>
         </div>
     </div>
@@ -274,7 +303,7 @@
         &copy; 2026 TOYHEART Admin System. All Rights Reserved.
     </footer>
 
-    <!-- 後台互動腳本 -->
+    <!-- 互動腳本 -->
     <script>
         function switchAdminTab(tab) {
             const prodSec = document.getElementById('productsSection');
@@ -295,10 +324,10 @@
         }
 
         function switchSubTab(subTab) {
-            ['pending', 'completed', 'cancelled'].forEach(t => {
-                document.getElementById('subTab' + t.charAt(0).toUpperCase() + t.slice(1)).className = "bg-zinc-800 text-zinc-300 hover:text-white px-3.5 py-1.5 rounded-lg transition";
+            ['trading', 'completed', 'cancelled'].forEach(t => {
+                document.getElementById('subTab' + t.charAt(0).toUpperCase() + t.slice(1)).className = "bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2 rounded-t-xl transition";
             });
-            document.getElementById('subTab' + subTab.charAt(0).toUpperCase() + subTab.slice(1)).className = "bg-brandYellow text-brandBlack px-3.5 py-1.5 rounded-lg transition font-bold";
+            document.getElementById('subTab' + subTab.charAt(0).toUpperCase() + subTab.slice(1)).className = "bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition font-bold";
         }
 
         function openProductModal() {
@@ -341,29 +370,57 @@
         }
 
         function confirmArrival() {
-            let actualQty = document.getElementById('actualArrivalQty').value;
-            alert(`入庫成功！已依勾選名單完成派貨排程。`);
+            alert(`入庫成功！已依實際到貨量完成派貨。`);
             closeArrivedModal();
         }
 
-        function sendDirectLine(customer) {
-            alert(`已向 [${customer}] 再次發送 LINE 到貨與補尾款通知！`);
+        function openDetailModal(name) {
+            document.getElementById('detailModalTitle').innerText = `📊 預購人明細 (依下單時間排序) - ${name}`;
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('detailModal').classList.add('flex');
         }
 
-        function markComplete(customer) {
-            if(confirm(`確認已完成 [${customer}] 的出貨與尾款收款嗎？將移至成交分頁。`)) {
-                alert(`已歸檔至「出貨且已收款成交」分頁。`);
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('flex');
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        function updateShipping(input) {
+            if(input.value) {
+                alert(`已記錄寄出日期：${input.value}，並已更新為已出貨狀態！`);
             }
         }
 
-        function cancelAndReassign(customer) {
-            if(confirm(`⚠️ 確定要取消 [${customer}] 的訂單嗎？取消後名額將釋出，可隨時改派給候補預購人。`)) {
-                alert(`訂單已取消，名額已釋出並移至取消分頁。`);
+        function updatePayment(input) {
+            if(input.value) {
+                alert(`已記錄收款日期：${input.value}，並已更新為已收款狀態！`);
             }
         }
 
-        function sortBy(column) {
-            alert(`已依欄位 [${column}] 進行排序切換。`);
+        function resendNotification(customer) {
+            if(confirm(`確定要再次發送 LINE 到貨通知給 [${customer}] 嗎？`)) {
+                alert(`已成功再次發送通知！上次通知時間已更新。`);
+            }
+        }
+
+        function editFulfillmentDetail(customer) {
+            alert(`編輯買家 [${customer}] 的出貨/收款明細...`);
+        }
+
+        function deleteFulfillmentDetail(customer) {
+            if(confirm(`⚠️ 確定要刪除 [${customer}] 的這筆到貨明細嗎？`)) {
+                alert(`已成功刪除該筆明細。`);
+            }
+        }
+
+        function editDetailItem(customer) {
+            alert(`編輯預購人 [${customer}] 的訂單數量...`);
+        }
+
+        function deleteDetailItem(customer) {
+            if(confirm(`⚠️ 確定要刪除預購人 [${customer}] 的預購單嗎？`)) {
+                alert(`已刪除該筆預購明細。`);
+            }
         }
 
         function batchNotifyLine() {

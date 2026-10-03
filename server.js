@@ -339,7 +339,27 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 });
 
-
+// --- 取得指定商品的預購人明細 API ---
+app.get('/api/products/:id/orders', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 查詢該商品的所有訂單，並透過 LEFT JOIN 抓取會員的真實姓名
+    const query = `
+      SELECT o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo,
+             u.real_name, u.uid
+      FROM orders o
+      LEFT JOIN users u ON o.uid = u.uid
+      WHERE o.product_id = $1
+      ORDER BY o.order_time DESC;
+    `;
+    
+    const result = await pool.query(query, [id]);
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 // --- 4. 訂單與派貨管理 API ---
 app.get('/api/admin/orders', async (req, res) => {
@@ -392,6 +412,7 @@ app.patch('/api/orders/:order_id/status', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Wanwangee Server is running on port ${PORT}`);

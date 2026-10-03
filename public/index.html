@@ -564,18 +564,14 @@ function openProductModal() {
     }
 }
 
-// 2. 點擊「編輯」按鈕時呼叫（透過 id 取得完整資料並正確顯示名稱與日期）
+// 2. 點擊「編輯」按鈕時呼叫
 async function openEditModal(productId) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/products`);
         const result = await res.json();
-        // 顯示目前圖片狀態
-        const imageInput = document.getElementById('inputImage');
-            if (product.image_url) {
-            // 如果原本有圖片，可以在旁邊加個提示或預覽
-            console.log("此商品已有圖片");
-            }
+
         if (result.success && result.data) {
+            // 先找出對應的商品資料
             const product = result.data.find(p => p.id === productId);
 
             if (product) {
@@ -599,12 +595,19 @@ async function openEditModal(productId) {
                 document.getElementById('inputPrice').value = product.price;
                 document.getElementById('inputPrePrice').value = product.pre_price;
 
+                // 檢查原本是否有圖片
+                if (product.image_url) {
+                    console.log("此商品已有圖片");
+                }
+
                 // 顯示 Modal 視窗
                 const modal = document.getElementById('productModal');
                 if (modal) {
                     modal.classList.remove('hidden');
                     modal.classList.add('flex');
                 }
+            } else {
+                alert('找不到該商品資料');
             }
         }
     } catch (err) {

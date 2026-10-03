@@ -448,16 +448,15 @@
                                 <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
                                 <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
                             </div>
-                            <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
-                                <button onclick="openDetailModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
-                                    📊 預購人明細
-                                </button>
-                                <div class="space-x-1.5">
-                                    // 確保編輯或到貨入庫時傳入的是 id
-                                    <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-                                    <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
-                                </div>
-                            </div>
+<div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
+    <button onclick="openDetailModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
+        📊 預購人明細
+    </button>
+    <div class="space-x-1.5">
+        <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
+        <button onclick="openArrivedModal(${p.id}, ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+    </div>
+</div>
                         </div>
                     `).join('');
                 } else {

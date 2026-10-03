@@ -525,7 +525,17 @@
             }
         }
 
-    // 上架預購商品 API    
+  
+    
+    // 開啟上架新商品彈窗
+    function openProductModal() {
+    document.getElementById('modalTitle').innerText = '上架新預購商品';
+    document.getElementById('inputName').value = ''; // 清空品名
+    document.getElementById('productModal').classList.remove('hidden');
+    document.getElementById('productModal').classList.add('flex');
+    }
+        
+    // 上架預購商品 API      
     async function saveProduct() {
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;

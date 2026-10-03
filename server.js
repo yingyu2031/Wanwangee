@@ -1,18 +1,33 @@
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
-app.use(express.json());
-app.use(cors());
+const PORT = process.env.PORT || 8080;
 
-// PostgreSQL 連線設定 (直接帶入您提供的連線參數)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+// PostgreSQL 連線設定 (結合您提供的連線參數與時區設定)
+let dbUrl = process.env.DATABASE_URL || 'postgresql://root:vyECdB09Ha6z8gXNO342U1Z5MJrei7bS@localhost:5432/wanwangee_db';
+
 const pool = new Pool({
-  user: process.env.POSTGRES_USER || 'root',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  database: process.env.POSTGRES_DB || 'wanwangee_db',
-  password: process.env.PASSWORD || 'vyECdB09Ha6z8gXNO342U1Z5MJrei7bS',
-  port: process.env.DATABASE_PORT || 5432,
+  connectionString: dbUrl,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  options: '-c timezone=Asia/Taipei'
 });
 
 pool.connect((err, client, release) => {
@@ -278,7 +293,6 @@ app.patch('/api/orders/:order_id/status', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`TOYHEART PostgreSQL Server is running on port ${PORT}`);
+  console.log(`TOYHEART Server is running on port ${PORT}`);
 });

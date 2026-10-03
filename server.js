@@ -114,6 +114,21 @@ initDB();
 // API 路由設計
 // ==========================================
 
+// 檢查會員是否已綁定過
+app.get('/api/users/check/:uid', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
+    // 判斷是否有紀錄且真實姓名、手機不為空
+    if (result.rows.length > 0 && result.rows[0].real_name && result.rows[0].phone) {
+      res.json({ success: true, bound: true, data: result.rows[0] });
+    } else {
+      res.json({ success: true, bound: false, data: result.rows[0] || null });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // --- 1. 會員相關 API ---
 app.post('/api/users/bind', async (req, res) => {
   try {

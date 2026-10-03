@@ -219,14 +219,10 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// 加上 upload.single('image') 來接收前端上傳名為 image 的檔案
-app.post('/api/products', upload.single('image'), async (req, res) => {
+app.post('/api/products', async (req, res) => {
   try {
-    const { name, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
     
-    // 如果有上傳檔案，自動組出圖片的存取路徑；若沒有則為空字串
-    const image_url = req.file ? `/uploads/${req.file.filename}` : (req.body.image_url || '');
-
     const query = `
       INSERT INTO products (name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
@@ -234,7 +230,7 @@ app.post('/api/products', upload.single('image'), async (req, res) => {
     `;
     const values = [
       name, 
-      image_url, 
+      image_url || '', 
       year_month, 
       quota, 
       start_time, 
@@ -255,6 +251,7 @@ app.post('/api/products', upload.single('image'), async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 // --- 4. 訂單與派貨管理 API ---

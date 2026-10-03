@@ -241,9 +241,9 @@
                     <label class="block text-zinc-400 mb-1">商品品名 <span class="text-red-400">*</span></label>
                     <input type="text" id="inputName" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                 </div>
-                <div>
+               <div>
                     <label class="block text-zinc-400 mb-1">商品圖片 (選填)</label>
-                    <input type="file" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400">
+                    <input type="file" id="inputImage" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div class="w-full">
@@ -551,19 +551,59 @@
     async function saveProduct() {
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
-    const quota = parseInt(document.getElementById('inputQuota').value) || 30;
+    const quota = document.getElementById('inputQuota').value;
     const start_time = document.getElementById('inputStart').value;
     const end_time = document.getElementById('inputEnd').value;
-    const price = parseFloat(document.getElementById('inputPrice').value);
-    const pre_price = parseFloat(document.getElementById('inputPrePrice').value);
+    const price = document.getElementById('inputPrice').value;
+    const pre_price = document.getElementById('inputPrePrice').value;
     const is_limited = document.getElementById('isLimited').checked;
     const need_deposit = document.getElementById('needDeposit').checked;
+    const imageFile = document.getElementById('inputImage').files[0];
 
-    if (!name || !start_time || !end_time || isNaN(price) || isNaN(pre_price)) {
+    if (!name || !start_time || !end_time || !price || !pre_price) {
         alert('請填寫所有必填欄位！');
         return;
     }
 
+    // 建立 FormData 以同時傳送文字與檔案
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('year_month', year_month);
+    formData.append('quota', quota);
+    formData.append('start_time', start_time);
+    formData.append('end_time', end_time);
+    formData.append('price', price);
+    formData.append('pre_price', pre_price);
+    formData.append('is_limited', is_limited);
+    formData.append('limit_qty', is_limited ? 2 : 1);
+    formData.append('need_deposit', need_deposit);
+    formData.append('deposit_amount', need_deposit ? 1500 : 0);
+    
+    if (imageFile) {
+        formData.append('image', imageFile); // 附加圖片檔案
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products`, {
+            method: 'POST',
+            body: formData // 注意：使用 FormData 時不需要手動設定 'Content-Type': 'application/json'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            alert('商品上架成功！');
+            closeProductModal();
+            if (typeof loadProducts === 'function') {
+                loadProducts();
+            }
+        } else {
+            alert('上架失敗：' + (result.message || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('API 錯誤:', error);
+        alert('連線伺服器失敗，請稍後再試。');
+    }
+}
     // 切換每人限量輸入框的顯示狀態
     function toggleLimitInput() {
     const isLimited = document.getElementById('isLimited').checked;
@@ -586,43 +626,6 @@
     }
     }
 
-    const productData = {
-        name,
-        year_month,
-        quota,
-        start_time,
-        end_time,
-        price,
-        pre_price,
-        is_limited,
-        limit_qty: is_limited ? 2 : 1,
-        need_deposit,
-        deposit_amount: need_deposit ? 1500 : 0
-    };
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/products`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(productData)
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            alert('商品上架成功！');
-            closeProductModal();
-            // 若有商品列表載入函式可在此同步刷新
-            if (typeof loadProducts === 'function') {
-                loadProducts();
-            }
-        } else {
-            alert('上架失敗：' + (result.message || '未知錯誤'));
-        }
-    } catch (error) {
-        console.error('API 錯誤:', error);
-        alert('連線伺服器失敗，請稍後再試。');
-    }
-}
         
  // 1. 檢視預購人明細 (依下單時間排序)
         async function openDetailModal(productName) {

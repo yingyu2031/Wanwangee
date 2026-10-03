@@ -201,6 +201,21 @@ app.get('/api/admin/users', async (req, res) => {
 });
 
 
+const multer = require('multer');
+const path = require('path');
+
+// 設定上傳檔案儲存的資料夾與檔名
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // 確保你的專案根目錄有名為 uploads 的資料夾
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
+
 // --- 3. 商品與預購專案 API ---
 app.get('/api/products', async (req, res) => {
   try {
@@ -219,21 +234,43 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-app.post('/api/products', async (req, res) => {
+// 加上 upload.single('image') 來接收前端上傳名為 image 的檔案
+app.post('/api/products', upload.single('image'), async (req, res) => {
   try {
-    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    const { name, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    
+    // 如果有上傳檔案，自動組出圖片的存取路徑；若沒有則為空字串
+    const image_url = req.file ? `/uploads/${req.file.filename}` : (req.body.image_url || '');
+
     const query = `
       INSERT INTO products (name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *;
     `;
-    const values = [name, image_url || '', year_month, quota, start_time, end_time, price, pre_price, is_limited || false, limit_qty || 1, need_deposit || false, deposit_amount || 0, memo || '', status || 'pre_ordering'];
+    const values = [
+      name, 
+      image_url, 
+      year_month, 
+      quota, 
+      start_time, 
+      end_time, 
+      price, 
+      pre_price, 
+      is_limited === 'true' || is_limited === true, 
+      limit_qty || 1, 
+      need_deposit === 'true' || need_deposit === true, 
+      deposit_amount || 0, 
+      memo || '', 
+      status || 'pre_ordering'
+    ];
+
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 // --- 4. 訂單與派貨管理 API ---
 app.get('/api/admin/orders', async (req, res) => {

@@ -114,8 +114,8 @@
             <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
                     <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
-                        <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">2026/10 發售</span>
-                        <span class="text-xs text-zinc-500">商品圖片預覽</span>
+                        <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
+                        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
                     </div>
                     <div class="space-y-1 text-xs">
                         <h3 class="text-sm font-bold text-white leading-snug">RX-93ff v GUNDAM Statue</h3>
@@ -433,9 +433,9 @@
                     grid.innerHTML = result.data.map(p => `
                         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
                             <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
-                                <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
-                                <span class="text-xs text-zinc-500">商品圖片預覽</span>
-                            </div>
+    <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
+    ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
+</div>
                             <div class="space-y-1 text-xs">
                                 <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
                                 <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
@@ -536,8 +536,8 @@
     document.getElementById('productModal').classList.add('flex');
     }
         
-    // 上架預購商品 API      
-    async function saveProduct() {
+    // 上架預購商品 API
+async function saveProduct() {
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
     const quota = document.getElementById('inputQuota').value;
@@ -547,35 +547,52 @@
     const pre_price = document.getElementById('inputPrePrice').value;
     const is_limited = document.getElementById('isLimited').checked;
     const need_deposit = document.getElementById('needDeposit').checked;
-    const imageFile = document.getElementById('inputImage').files[0];
+    
+    // 取得前端上傳的圖片檔案
+    const imageInput = document.getElementById('inputImage');
+    const file = imageInput && imageInput.files[0] ? imageInput.files[0] : null;
 
     if (!name || !start_time || !end_time || !price || !pre_price) {
         alert('請填寫所有必填欄位！');
         return;
     }
 
-    // 建立 FormData 以同時傳送文字與檔案
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('year_month', year_month);
-    formData.append('quota', quota);
-    formData.append('start_time', start_time);
-    formData.append('end_time', end_time);
-    formData.append('price', price);
-    formData.append('pre_price', pre_price);
-    formData.append('is_limited', is_limited);
-    formData.append('limit_qty', is_limited ? 2 : 1);
-    formData.append('need_deposit', need_deposit);
-    formData.append('deposit_amount', need_deposit ? 1500 : 0);
-    
-    if (imageFile) {
-        formData.append('image', imageFile); // 附加圖片檔案
-    }
+    // 將圖片轉為 Base64 字串的輔助函式
+    const convertToBase64 = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    };
 
     try {
+        let image_url = '';
+        if (file) {
+            // 將上傳的圖片轉成 Base64 純文字
+            image_url = await convertToBase64(file);
+        }
+
+        const productData = {
+            name,
+            image_url, 
+            year_month,
+            quota,
+            start_time,
+            end_time,
+            price,
+            pre_price,
+            is_limited,
+            limit_qty: is_limited ? 2 : 1,
+            need_deposit,
+            deposit_amount: need_deposit ? 1500 : 0
+        };
+
         const response = await fetch(`${API_BASE_URL}/api/products`, {
             method: 'POST',
-            body: formData // 注意：使用 FormData 時不需要手動設定 'Content-Type': 'application/json'
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productData) // 直接送 JSON，不用 FormData
         });
         const result = await response.json();
 
@@ -590,9 +607,11 @@
         }
     } catch (error) {
         console.error('API 錯誤:', error);
-        alert('連線伺服器失敗，請稍後再試。');
+        alert('連線伺服器失敗或圖片檔案太大，請稍後再試。');
     }
 }
+
+
     // 切換每人限量輸入框的顯示狀態
     function toggleLimitInput() {
     const isLimited = document.getElementById('isLimited').checked;

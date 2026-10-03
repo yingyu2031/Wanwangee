@@ -301,6 +301,9 @@
             <button onclick="saveProduct()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg mt-2">
                 確認儲存商品設定
             </button>
+            <button type="button" onclick="deleteProduct()" class="w-full bg-red-600/20 hover:bg-red-600/30 text-red-400 font-bold py-3 rounded-xl border border-red-500/30 transition text-sm mt-3">
+                刪除此商品
+            </button>
         </div>
     </div>
     
@@ -535,17 +538,89 @@
 
   
     
-    // 開啟上架新商品彈窗
-    function openProductModal() {
+ // 宣告全域變數：用來記錄目前正在編輯的商品 ID (null 代表是「新增」)
+let currentEditId = null;
+
+// 1. 點擊「+ 上架新商品」按鈕時呼叫
+function openProductModal() {
+    currentEditId = null; // 清空代表是新增
     document.getElementById('modalTitle').innerText = '上架新預購商品';
-    document.getElementById('inputName').value = ''; // 清空品名
-    document.getElementById('productModal').classList.remove('hidden');
-    document.getElementById('productModal').classList.add('flex');
+    
+    // 清空表單欄位
+    document.getElementById('inputName').value = '';
+    document.getElementById('inputYM').value = '';
+    document.getElementById('inputQuota').value = '';
+    document.getElementById('inputStart').value = '';
+    document.getElementById('inputEnd').value = '';
+    document.getElementById('inputPrice').value = '';
+    document.getElementById('inputPrePrice').value = '';
+    document.getElementById('inputImage').value = '';
+
+    // 顯示 Modal 視窗
+    const modal = document.getElementById('productModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
-        
-    // 上架預購商品 API
-    async function saveProduct() {
-    if (window.isSubmitting) return; // 防止重複觸發
+}
+
+// 2. 點擊「編輯」按鈕時呼叫（透過 id 取得完整資料並正確顯示名稱與日期）
+async function openEditModal(productId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/products`);
+        const result = await res.json();
+
+        if (result.success && result.data) {
+            const product = result.data.find(p => p.id === productId);
+
+            if (product) {
+                // 記錄目前正在編輯的 ID
+                currentEditId = product.id;
+
+                // 填入真正的商品名稱與資料
+                document.getElementById('modalTitle').innerText = '編輯商品：' + product.name;
+                document.getElementById('inputName').value = product.name;
+                document.getElementById('inputYM').value = product.year_month;
+                document.getElementById('inputQuota').value = product.quota;
+                
+                // 處理日期格式（只取前 10 碼 YYYY-MM-DD 填入 date input）
+                if (product.start_time) {
+                    document.getElementById('inputStart').value = product.start_time.substring(0, 10);
+                }
+                if (product.end_time) {
+                    document.getElementById('inputEnd').value = product.end_time.substring(0, 10);
+                }
+
+                document.getElementById('inputPrice').value = product.price;
+                document.getElementById('inputPrePrice').value = product.pre_price;
+
+                // 顯示 Modal 視窗
+                const modal = document.getElementById('productModal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+        }
+    } catch (err) {
+        console.error('取得商品資料失敗:', err);
+        alert('無法載入商品資料');
+    }
+}
+
+// 3. 關閉商品彈窗
+function closeProductModal() {
+    currentEditId = null;
+    const modal = document.getElementById('productModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
+
+// 4. 儲存商品設定（自動判斷是「新增」還是「編輯更新」，並帶有 Loading 遮罩與防連點保護）
+async function saveProduct() {
+    if (window.isSubmitting) return; // 防止重複點擊觸發
 
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
@@ -557,7 +632,6 @@
     const is_limited = document.getElementById('isLimited').checked;
     const need_deposit = document.getElementById('needDeposit').checked;
     
-    // 取得前端上傳的圖片檔案
     const imageInput = document.getElementById('inputImage');
     const file = imageInput && imageInput.files[0] ? imageInput.files[0] : null;
 
@@ -571,7 +645,6 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     if (loadingOverlay) loadingOverlay.classList.remove('hidden');
 
-    // 將圖片轉為 Base64 字串的輔助函式
     const convertToBase64 = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -584,7 +657,6 @@
     try {
         let image_url = '';
         if (file) {
-            // 將上傳的圖片轉成 Base64 純文字（大圖需要一點時間，這時動畫剛好派上用場）
             image_url = await convertToBase64(file);
         }
 
@@ -603,33 +675,40 @@
             deposit_amount: need_deposit ? 1500 : 0
         };
 
-        const response = await fetch(`${API_BASE_URL}/api/products`, {
-            method: 'POST',
+        // 動態判斷：有 currentEditId 代表是修改更新 (PUT)，沒有則是新增 (POST)
+        let url = `${API_BASE_URL}/api/products`;
+        let method = 'POST';
+
+        if (currentEditId) {
+            url = `${API_BASE_URL}/api/products/${currentEditId}`;
+            method = 'PUT';
+        }
+
+        const response = await fetch(url, {
+            method: method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(productData)
         });
         const result = await response.json();
 
         if (result.success) {
-            alert('商品上架成功！');
+            alert(currentEditId ? '商品修改成功！' : '商品上架成功！');
             closeProductModal();
             if (typeof loadProducts === 'function') {
                 loadProducts();
             }
         } else {
-            alert('上架失敗：' + (result.message || '未知錯誤'));
+            alert('操作失敗：' + (result.message || '未知錯誤'));
         }
     } catch (error) {
         console.error('API 錯誤:', error);
         alert('連線伺服器失敗或圖片檔案太大，請稍後再試。');
     } finally {
-        // 無論成功或失敗，關閉遮罩並解鎖開關
+        // 關閉遮罩與解鎖開關
         window.isSubmitting = false;
         if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
 }
-
-
 
     // 切換每人限量輸入框的顯示狀態
     function toggleLimitInput() {
@@ -653,8 +732,39 @@
     }
     }
 
+// 5. 刪除商品函式（包含確認提示）
+async function deleteProduct() {
+    if (!currentEditId) {
+        alert('無法取得商品編號');
+        return;
+    }
+
+    const isConfirmed = confirm('確定要刪除這個商品嗎？此動作無法復原！');
+    if (!isConfirmed) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${currentEditId}`, {
+            method: 'DELETE'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            alert('商品已成功刪除！');
+            closeProductModal();
+            if (typeof loadProducts === 'function') {
+                loadProducts();
+            }
+        } else {
+            alert('刪除失敗：' + (result.message || '未知錯誤'));
+        }
+    } catch (error) {
+        console.error('API 錯誤:', error);
+        alert('連線伺服器失敗，請稍後再試。');
+    }
+}
+
         
- // 1. 檢視預購人明細 (依下單時間排序)
+ // 檢視預購人明細 (依下單時間排序)
         async function openDetailModal(productName) {
             document.getElementById('detailModalTitle').innerText = `預購人明細 - ${productName}`;
             document.getElementById('detailModal').classList.remove('hidden');
@@ -667,52 +777,8 @@
             document.getElementById('detailModal').classList.remove('flex');
             document.getElementById('detailModal').classList.add('hidden');
         }
-// 2. 編輯商品彈窗
 
-    async function openEditModal(productId) {
-    try {
-        // 透過 id 向後端取得該商品的完整資料
-        const res = await fetch(`${API_BASE_URL}/api/products`);
-        const result = await res.json();
-
-        if (result.success) {
-            // 從清單中找出這筆 id 對應的商品資料
-            const product = result.data.find(p => p.id === productId);
-            
-            if (product) {
-                // 設定彈窗標題與欄位，使用真正的商品名稱 (product.name)
-                document.getElementById('modalTitle').innerText = '編輯商品：' + product.name;
-                document.getElementById('inputName').value = product.name;
-                document.getElementById('inputYM').value = product.year_month;
-                document.getElementById('inputQuota').value = product.quota;
-                document.getElementById('inputStart').value = product.start_time;
-                document.getElementById('inputEnd').value = product.end_time;
-                document.getElementById('inputPrice').value = product.price;
-                document.getElementById('inputPrePrice').value = product.pre_price;
-                
-                // 如果有隱藏的 id 欄位可以存起來（方便等下儲存修改時用）
-                const editIdInput = document.getElementById('editProductId');
-                if (editIdInput) editIdInput.value = product.id;
-
-                // 顯示彈窗
-                document.getElementById('productModal').classList.remove('hidden');
-                document.getElementById('productModal').classList.add('flex');
-            }
-        }
-    } catch (err) {
-        console.error('取得商品資料失敗:', err);
-        alert('無法載入商品資料');
-    }
-}
-
-        function closeProductModal() {
-        const modal = document.getElementById('productModal');
-        if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-            }
-        }
- // 3. 到貨入庫與指定派貨彈窗
+ // 到貨入庫與指定派貨彈窗
         function openArrivedModal(productName, quota) {
             document.getElementById('arrivedProductName').innerText = `商品：${productName} (總配額：${quota} 隻)`;
             document.getElementById('arrivedModal').classList.remove('hidden');

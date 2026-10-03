@@ -538,10 +538,6 @@
         
     // 上架預購商品 API
     async function saveProduct() {
-    const saveBtn = document.getElementById('saveProductBtn'); // 假設你的儲存按鈕有這個 id
-    if (saveBtn) saveBtn.disabled = true; // 點擊後立刻停用按鈕
-
-    try {
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
     const quota = document.getElementById('inputQuota').value;
@@ -612,8 +608,6 @@
     } catch (error) {
         console.error('API 錯誤:', error);
         alert('連線伺服器失敗或圖片檔案太大，請稍後再試。');
-    } finally {
-        if (saveBtn) saveBtn.disabled = false; // 結束後恢復按鈕
     }
 }
 

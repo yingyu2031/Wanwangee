@@ -115,7 +115,7 @@ initDB();
 // API 路由設計
 // ==========================================
 
-// 檢查會員是否已綁定過
+// --- 檢查會員是否已綁定過 ---
 app.get('/api/users/check/:uid', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
@@ -129,10 +129,16 @@ app.get('/api/users/check/:uid', async (req, res) => {
   }
 });
 
-// 綁定或更新會員資料
+// --- 會員綁定與更新 API ---
 app.post('/api/users/bind', async (req, res) => {
   try {
     const { uid, line_nickname, real_name, phone, email, address, birthday, gender } = req.body;
+    
+    // 檢查前端是否有確實傳送必要欄位
+    if (!uid || !real_name || !phone) {
+      return res.status(400).json({ success: false, message: '缺少必要欄位 (uid, real_name, phone)' });
+    }
+
     const query = `
       INSERT INTO users (uid, line_nickname, real_name, phone, email, address, birthday, gender, join_date)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
@@ -147,23 +153,27 @@ app.post('/api/users/bind', async (req, res) => {
         gender = COALESCE($8, users.gender)
       RETURNING *;
     `;
-    const values = [uid, line_nickname, real_name, phone, email || '', address, birthday, gender];
+    
+    const values = [
+      uid, 
+      line_nickname || '', 
+      real_name, 
+      phone, 
+      email || '', 
+      address || '', 
+      birthday || '', 
+      gender || '不透露'
+    ];
+    
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows[0] });
   } catch (err) {
+    console.error('會員綁定錯誤:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-app.get('/api/users/:uid', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: '找不到會員資料' });
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
+
 
 app.get('/api/products', async (req, res) => {
   try {
@@ -173,6 +183,9 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
+
 
 app.listen(PORT, () => {
   console.log(`TOYHEART Server is running on port ${PORT}`);

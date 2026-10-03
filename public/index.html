@@ -544,9 +544,10 @@ let currentEditId = null;
 // 1. 點擊「+ 上架新商品」按鈕時呼叫
 function openProductModal() {
     currentEditId = null; // 清空代表是新增
+    currentImageUrl = ''; // 清空原本的圖片紀錄
     document.getElementById('modalTitle').innerText = '上架新預購商品';
     
-    // 清空表單欄位
+    // 清空基本表單欄位
     document.getElementById('inputName').value = '';
     document.getElementById('inputYM').value = '';
     document.getElementById('inputQuota').value = '';
@@ -555,6 +556,22 @@ function openProductModal() {
     document.getElementById('inputPrice').value = '';
     document.getElementById('inputPrePrice').value = '';
     document.getElementById('inputImage').value = '';
+
+    // 重置「是否限購」與限量輸入框
+    const isLimitedCheckbox = document.getElementById('isLimited');
+    if (isLimitedCheckbox) isLimitedCheckbox.checked = false;
+    const limitContainer = document.getElementById('limitContainer');
+    if (limitContainer) limitContainer.style.display = 'none';
+    const inputLimitQty = document.getElementById('inputLimitQty');
+    if (inputLimitQty) inputLimitQty.value = '';
+
+    // 重置「是否預付訂金」與訂金金額輸入框
+    const needDepositCheckbox = document.getElementById('needDeposit');
+    if (needDepositCheckbox) needDepositCheckbox.checked = false;
+    const depositContainer = document.getElementById('depositContainer');
+    if (depositContainer) depositContainer.style.display = 'none';
+    const inputDepositAmount = document.getElementById('inputDepositAmount');
+    if (inputDepositAmount) inputDepositAmount.value = '';
 
     // 顯示 Modal 視窗
     const modal = document.getElementById('productModal');
@@ -571,12 +588,12 @@ async function openEditModal(productId) {
         const result = await res.json();
 
         if (result.success && result.data) {
-            // 先找出對應的商品資料
             const product = result.data.find(p => p.id === productId);
 
             if (product) {
-                // 記錄目前正在編輯的 ID
+                // 記錄目前正在編輯的 ID 與原本的圖片網址
                 currentEditId = product.id;
+                currentImageUrl = product.image_url || '';
 
                 // 填入真正的商品名稱與資料
                 document.getElementById('modalTitle').innerText = '編輯商品：' + product.name;
@@ -594,11 +611,9 @@ async function openEditModal(productId) {
 
                 document.getElementById('inputPrice').value = product.price;
                 document.getElementById('inputPrePrice').value = product.pre_price;
-
-                // 檢查原本是否有圖片
-                if (product.image_url) {
-                    console.log("此商品已有圖片");
-                }
+                
+                // 清空檔案選擇框（避免誤導）
+                document.getElementById('inputImage').value = '';
 
                 // 顯示 Modal 視窗
                 const modal = document.getElementById('productModal');
@@ -663,7 +678,8 @@ async function saveProduct() {
     };
 
     try {
-        let image_url = '';
+        // 圖片處理防護：如果沒有重新選擇新檔案，直接沿用原本資料庫的圖片，避免被空白洗掉
+        let image_url = typeof currentImageUrl !== 'undefined' ? currentImageUrl : '';
         if (file) {
             image_url = await convertToBase64(file);
         }
@@ -687,7 +703,7 @@ async function saveProduct() {
         let url = `${API_BASE_URL}/api/products`;
         let method = 'POST';
 
-        if (currentEditId) {
+        if (typeof currentEditId !== 'undefined' && currentEditId) {
             url = `${API_BASE_URL}/api/products/${currentEditId}`;
             method = 'PUT';
         }
@@ -702,6 +718,8 @@ async function saveProduct() {
         if (result.success) {
             alert(currentEditId ? '商品修改成功！' : '商品上架成功！');
             closeProductModal();
+            if (typeof currentEditId !== 'undefined') currentEditId = null;
+            if (typeof currentImageUrl !== 'undefined') currentImageUrl = '';
             if (typeof loadProducts === 'function') {
                 loadProducts();
             }
@@ -718,8 +736,8 @@ async function saveProduct() {
     }
 }
 
-    // 切換每人限量輸入框的顯示狀態
-    function toggleLimitInput() {
+// 切換每人限量輸入框的顯示狀態
+function toggleLimitInput() {
     const isLimited = document.getElementById('isLimited').checked;
     const container = document.getElementById('limitContainer');
     if (isLimited) {
@@ -727,10 +745,10 @@ async function saveProduct() {
     } else {
         container.style.display = 'none';
     }
-    }
+}
 
-    // 切換訂金金額輸入框的顯示狀態
-    function toggleDepositInput() {
+// 切換訂金金額輸入框的顯示狀態
+function toggleDepositInput() {
     const needDeposit = document.getElementById('needDeposit').checked;
     const container = document.getElementById('depositContainer');
     if (needDeposit) {
@@ -738,7 +756,7 @@ async function saveProduct() {
     } else {
         container.style.display = 'none';
     }
-    }
+}
 
 // 5. 刪除商品函式（包含確認提示）
 async function deleteProduct() {

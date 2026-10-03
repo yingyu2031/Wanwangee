@@ -374,13 +374,13 @@
                 const result = await res.json();
 
                 if (result.success) {
-                    alert('🎉 登入成功！');
+                    alert('登入成功！');
                     document.getElementById('loginModal').classList.add('hidden');
                     loadProducts();
                     loadOrders(currentOrderStatus);
                     loadMembers();
                 } else {
-                    alert('❌ 帳號或密碼錯誤');
+                    alert('帳號或密碼錯誤');
                 }
             } catch (err) {
                 console.error(err);

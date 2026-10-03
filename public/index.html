@@ -601,6 +601,14 @@
             document.getElementById('productModal').classList.remove('hidden');
             document.getElementById('productModal').classList.add('flex');
         }
+
+        function closeProductModal() {
+        const modal = document.getElementById('productModal');
+        if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+            }
+        }
  // 3. 到貨入庫與指定派貨彈窗
         function openArrivedModal(productName, quota) {
             document.getElementById('arrivedProductName').innerText = `商品：${productName} (總配額：${quota} 隻)`;

@@ -21,10 +21,24 @@
         }
     </script>
 </head>
-<body class="bg-brandBlack text-white min-h-screen flex flex-col justify-between font-sans">
+<body class="bg-brandBlack text-white min-h-screen flex flex-col justify-between font-sans relative">
+
+    <!-- 未加入會員彈跳視窗 (Modal) -->
+    <div id="registerModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-brandYellow/10 text-brandYellow rounded-full flex items-center justify-center mx-auto text-xl font-black">
+                ⚠️️
+            </div>
+            <h3 class="text-lg font-black text-white">尚未加入 TOYHEART 會員</h3>
+            <p class="text-xs text-zinc-400">檢測到您的 LINE 帳號尚未完成實名與收件地址綁定，請點擊下方按鈕進行註冊以解鎖預購資格。</p>
+            <button onclick="closeModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg">
+                立即填寫註冊資料
+            </button>
+        </div>
+    </div>
 
     <!-- 頂部導覽列 -->
-    <header class="bg-brandYellow text-brandBlack sticky top-0 z-50 p-4 shadow-md flex items-center justify-between">
+    <header class="bg-brandYellow text-brandBlack sticky top-0 z-40 p-4 shadow-md flex items-center justify-between">
         <div class="flex items-center space-x-2">
             <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -34,7 +48,7 @@
                 <h1 class="text-base font-black tracking-wider">會員專屬資料綁定</h1>
             </div>
         </div>
-        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner">
+        <div id="memberBadge" class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner">
             👑 綁定中心
         </div>
     </header>
@@ -42,21 +56,19 @@
     <!-- 主要內容區 -->
     <main class="p-4 sm:p-6 max-w-lg mx-auto w-full flex-grow space-y-6">
         
-        <!-- LINE 個人名片小卡 (參考您提供的設計風格) -->
+        <!-- LINE 個人名片小卡 -->
         <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-3xl shadow-xl flex items-center space-x-4">
-            <!-- 頭像與 LINE 徽章 -->
             <div class="relative flex-shrink-0">
                 <img id="lineAvatar" src="https://via.placeholder.com/150" alt="LINE 頭像" class="w-16 h-16 rounded-full object-cover border-2 border-brandYellow">
                 <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow border border-brandBlack">
                     LINE
                 </span>
             </div>
-            <!-- 暱稱與會員等級 -->
             <div class="flex-grow">
                 <div class="flex items-center space-x-2">
                     <h2 id="lineNickname" class="text-base font-black text-white tracking-wide">載入中...</h2>
-                    <span class="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                        VIP 尊榮會員
+                    <span id="memberLevelTag" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                        一般會員
                     </span>
                 </div>
                 <p id="lineUidDisplay" class="text-[11px] text-zinc-500 font-mono mt-0.5 truncate max-w-[200px]">UID: 讀取中...</p>
@@ -71,25 +83,21 @@
             </div>
 
             <form id="registerForm" onsubmit="submitMemberData(event)" class="space-y-3 text-xs">
-                <!-- 真實姓名 -->
                 <div>
                     <label class="block text-zinc-400 mb-1">真實姓名 <span class="text-red-400">*</span></label>
                     <input type="text" id="realName" required placeholder="例如：陳大文 (請與收件人相符)" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
                 </div>
 
-                <!-- 手機號碼 -->
                 <div>
                     <label class="block text-zinc-400 mb-1">手機號碼 <span class="text-red-400">*</span></label>
                     <input type="tel" id="phone" required placeholder="例如：0912345678" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
                 </div>
 
-                <!-- 郵寄地址 -->
                 <div>
                     <label class="block text-zinc-400 mb-1">常用郵寄地址 <span class="text-red-400">*</span></label>
                     <textarea id="address" required rows="2" placeholder="例如：台北市信義區信義路五段7號..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow"></textarea>
                 </div>
 
-                <!-- 生日與性別 (雙欄) -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-zinc-400 mb-1">生日日期</label>
@@ -105,57 +113,84 @@
                     </div>
                 </div>
 
-                <!-- 隱藏的 LINE UID 欄位 (自動帶入後端) -->
                 <input type="hidden" id="lineUid">
                 <input type="hidden" id="lineNicknameHidden">
 
-                <!-- 提交按鈕 -->
                 <button type="submit" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg mt-4">
-                    確認送出並完成綁定
+                    確認送出並更新綁定資料
                 </button>
             </form>
         </div>
     </main>
 
-    <!-- 底部版權 -->
     <footer class="text-center py-4 text-xs text-zinc-600 border-t border-zinc-900">
         &copy; 2026 TOYHEART Member System. All Rights Reserved.
     </footer>
 
-    <!-- LIFF 初始化與前端互動邏輯 -->
+    <!-- 邏輯與 API 互動 -->
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const MY_LIFF_ID = "YOUR_LIFF_ID_HERE"; 
+        const API_BASE_URL = "https://wanwangee.zeabur.app";
+        const MY_LIFF_ID = "2011841001-7yVwI75U"; 
 
+        document.addEventListener("DOMContentLoaded", function () {
             liff.init({ liffId: MY_LIFF_ID })
                 .then(() => {
                     if (!liff.isLoggedIn()) {
                         liff.login();
                     } else {
                         liff.getProfile().then(profile => {
-                            document.getElementById('lineNickname').innerText = profile.displayName;
-                            document.getElementById('lineNicknameHidden').value = profile.displayName;
-                            document.getElementById('lineUid').value = profile.userId;
-                            document.getElementById('lineUidDisplay').innerText = `UID: ${profile.userId}`;
-                            if (profile.pictureUrl) {
-                                document.getElementById('lineAvatar').src = profile.pictureUrl;
-                            }
+                            setupUserData(profile.userId, profile.displayName, profile.pictureUrl);
                         }).catch(err => {
                             console.error('取得 LINE Profile 失敗', err);
                         });
                     }
                 })
                 .catch((err) => {
-                    console.log('LIFF 初始化失敗（若在外部瀏覽器測試為正常現象）', err);
-                    // 測試用模擬資料
-                    document.getElementById('lineNickname').innerText = "測試玩家小傑";
-                    document.getElementById('lineNicknameHidden').value = "測試玩家小傑";
-                    document.getElementById('lineUid').value = "U_mock_uid_123456789";
-                    document.getElementById('lineUidDisplay').innerText = "UID: U_mock_uid_123456789";
+                    console.log('LIFF 初始化失敗（外部瀏覽器測試中）', err);
+                    // 測試用模擬 UID
+                    setupUserData("U_mock_uid_123456789", "測試玩家小傑", null);
                 });
         });
 
-        function submitMemberData(event) {
+        async function setupUserData(uid, displayName, pictureUrl) {
+            document.getElementById('lineNickname').innerText = displayName;
+            document.getElementById('lineNicknameHidden').value = displayName;
+            document.getElementById('lineUid').value = uid;
+            document.getElementById('lineUidDisplay').innerText = `UID: ${uid}`;
+            if (pictureUrl) {
+                document.getElementById('lineAvatar').src = pictureUrl;
+            }
+
+            // 向後端檢查是否已綁定過
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/users/check/${uid}`);
+                const result = await res.json();
+
+                if (result.success && result.bound) {
+                    // 已綁定：自動帶入會員資料到畫面
+                    const user = result.data;
+                    document.getElementById('realName').value = user.real_name || '';
+                    document.getElementById('phone').value = user.phone || '';
+                    document.getElementById('address').value = user.address || '';
+                    document.getElementById('birthday').value = user.birthday || '';
+                    document.getElementById('gender').value = user.gender || '不透露';
+                    if (user.member_level) {
+                        document.getElementById('memberLevelTag').innerText = user.member_level;
+                    }
+                } else {
+                    // 未綁定：顯示彈跳視窗
+                    document.getElementById('registerModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('檢查綁定狀態失敗:', error);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('registerModal').classList.add('hidden');
+        }
+
+        async function submitMemberData(event) {
             event.preventDefault();
 
             const memberData = {
@@ -168,12 +203,26 @@
                 gender: document.getElementById('gender').value
             };
 
-            console.log("準備送出會員資料：", memberData);
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/bind`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
 
-            alert('🎉 會員資料與真實姓名綁定成功！');
-            
-            if (liff.isInClient()) {
-                liff.closeWindow();
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('🎉 會員資料與真實姓名綁定成功！');
+                    if (liff.isInClient()) {
+                        liff.closeWindow();
+                    }
+                } else {
+                    alert('綁定失敗：' + (result.message || '未知錯誤'));
+                }
+            } catch (error) {
+                console.error('API 請求錯誤:', error);
+                alert('連線伺服器失敗，請稍後再試。');
             }
         }
     </script>

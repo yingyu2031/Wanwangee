@@ -778,14 +778,13 @@ async function deleteProduct() {
     }
 }
 
-        
 // 開啟預購人明細彈窗
 async function openDetailModal(productId, productName) {
     const modal = document.getElementById('detailModal');
     const title = document.getElementById('detailModalTitle');
     const content = document.getElementById('detailModalContent');
 
-    title.innerText = `預購人明細：${productName || '商品'};
+    title.innerText = `預購人明細：${productName || '商品'}`;
     content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
 
     if (modal) {
@@ -809,17 +808,20 @@ async function openDetailModal(productId, productName) {
                             <thead>
                                 <tr class="border-b border-zinc-800 text-zinc-400">
                                     <th class="p-2">下單時間</th>
-                                    <th class="p-2">暱稱(姓名)</th>
+                                    <th class="p-2">暱稱 (姓名)</th>
                                     <th class="p-2 text-center">數量</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${result.data.map(order => {
                                     const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
+                                    const nickname = order.line_nickname || '*';
+                                    const realName = order.real_name || '*';
+                                    
                                     return `
                                         <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/30">
                                             <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
-                                            <td class="p-2 font-bold text-white">${order.line_nickname} <span class="text-[10px] text-zinc-500">(${order.real_name})</span></td>
+                                            <td class="p-2 font-bold text-white">${nickname} <span class="text-[10px] text-zinc-500">(${realName})</span></td>
                                             <td class="p-2 text-center text-brandYellow font-bold">${order.quantity}</td>
                                         </tr>
                                     `;

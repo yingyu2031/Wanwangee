@@ -203,11 +203,18 @@ app.get('/api/admin/users', async (req, res) => {
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
+
+// 確保 uploads 資料夾存在，若不存在則自動建立
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // 設定上傳檔案儲存的資料夾與檔名
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // 確保你的專案根目錄有名為 uploads 的資料夾
+    cb(null, uploadDir); 
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -215,6 +222,9 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage });
+
+// 另外別忘了讓 Express 可以對外公開存取 uploads 資料夾內的圖片
+app.use('/uploads', express.static(uploadDir));
 
 // --- 3. 商品與預購專案 API ---
 app.get('/api/products', async (req, res) => {

@@ -68,7 +68,7 @@
                 </div>
             </div>
 
-            <!-- 商品清單網格 (圖片在上) -->
+            <!-- 商品清單網格 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
                     <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
@@ -94,19 +94,19 @@
             </div>
         </div>
 
-        <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
+        <!-- ================= 區塊 B：到貨與出貨管理名單 (多筆精簡範例) ================= -->
         <div id="fulfillmentSection" class="space-y-4 hidden">
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-4 shadow-xl">
                 <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
 
-                <!-- 書籤式分頁籤 (交易中、成交、取消) -->
+                <!-- 書籤式分頁籤 -->
                 <div class="flex space-x-2 border-b border-zinc-800 pb-0 text-xs font-bold">
-                    <button onclick="switchSubTab('trading')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow">交易中 (1)</button>
+                    <button onclick="switchSubTab('trading')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow">交易中 (4)</button>
                     <button onclick="switchSubTab('completed')" id="subTabCompleted" class="bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2.5 rounded-t-xl transition">成交 (0)</button>
                     <button onclick="switchSubTab('cancelled')" id="subTabCancelled" class="bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2.5 rounded-t-xl transition">取消 (0)</button>
                 </div>
 
-                <!-- 批次發通知按鈕移至書籤下、明細上方 -->
+                <!-- 批次發通知按鈕 -->
                 <div class="pt-1">
                     <button onclick="batchNotifyLine()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-2.5 rounded-xl transition shadow">
                         🚀 批次群發 LINE 通知給已勾選買家
@@ -114,66 +114,107 @@
                 </div>
             </div>
 
-            <!-- 精簡明細列表 (預購人在第一欄，含備註與按鈕改派) -->
-            <div class="space-y-3">
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3 shadow-xl">
-                    <div class="flex justify-between items-start border-b border-zinc-800 pb-2">
+            <!-- 精簡版面多筆明細範例列表 -->
+            <div class="space-y-3 text-xs">
+                
+                <!-- 範例 1 -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-2 shadow-lg">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
                         <div class="flex items-center space-x-2">
                             <input type="checkbox" class="rounded bg-zinc-800 border-zinc-700">
-                            <div>
-                                <span class="text-sm font-bold text-white">玩家小傑</span>
-                                <span class="text-[10px] text-zinc-500 block">@jack_toy</span>
-                            </div>
+                            <span class="font-bold text-white">玩家小傑 <span class="text-[10px] text-zinc-500">(@jack_toy)</span></span>
                         </div>
-                        <span class="text-xs bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold">RX-93ff v GUNDAM (1隻)</span>
+                        <span class="bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold text-[11px]">RX-93ff v GUNDAM (1隻)</span>
                     </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                        <!-- 寄出註記 (按鈕彈窗輸入日期) -->
-                        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 space-y-1.5 flex flex-col justify-between">
-                            <div>
-                                <span class="text-[11px] text-zinc-400 block mb-1">寄出註記：</span>
-                                <span id="shipBadge" class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold inline-block">未寄出</span>
-                            </div>
-                            <button onclick="promptShippingDate()" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs py-1.5 px-2 rounded-lg border border-zinc-700 font-bold transition">
-                                📅 填寫出貨日
-                            </button>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-[11px]">
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">寄出：</span>
+                            <span id="shipBadge1" class="text-red-400 font-bold">未寄出</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'shipBadge1', '已寄出')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
                         </div>
-                        <!-- 收款註記 (按鈕彈窗輸入日期) -->
-                        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 space-y-1.5 flex flex-col justify-between">
-                            <div>
-                                <span class="text-[11px] text-zinc-400 block mb-1">收款註記：</span>
-                                <span id="payBadge" class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[10px] font-bold inline-block">未收款</span>
-                            </div>
-                            <button onclick="promptPaymentDate()" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs py-1.5 px-2 rounded-lg border border-zinc-700 font-bold transition">
-                                💰 填寫收款日
-                            </button>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">收款：</span>
+                            <span id="payBadge1" class="text-red-400 font-bold">未收款</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'payBadge1', '已收款')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
                         </div>
-                        <!-- 通知紀錄 -->
-                        <div class="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 flex flex-col justify-between">
-                            <div>
-                                <span class="text-[11px] text-zinc-400 block">上次通知：</span>
-                                <span class="text-brandYellow text-[11px] font-mono">10-02 10:00</span>
-                            </div>
-                            <button onclick="resendNotification('玩家小傑')" class="mt-2 bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs py-1.5 px-2 rounded-lg border border-zinc-700 font-bold transition">
-                                💬 再次發送通知
-                            </button>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">上次通知：<span class="text-brandYellow font-mono">10-02 10:00</span></span>
+                            <button onclick="resendNotification('玩家小傑')" class="ml-auto bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-1 rounded border border-zinc-700 font-bold">💬 發通知</button>
                         </div>
                     </div>
-
-                    <!-- 備註與改派按鈕 -->
-                    <div class="pt-2 border-t border-zinc-800 flex flex-col sm:flex-row justify-between items-center gap-2">
-                        <input type="text" placeholder="新增備註（例如：併9月現貨寄出）..." class="w-full sm:w-2/3 bg-zinc-800 border border-zinc-700 text-xs text-zinc-200 rounded-lg p-2 focus:outline-none">
-                        <div class="flex space-x-2 w-full sm:w-auto justify-end">
-                            <button onclick="cancelAndReassign('玩家小傑')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs px-3 py-1.5 rounded-lg border border-red-500/30 font-bold">客人取消(改派)</button>
-                        </div>
+                    <div class="flex justify-between items-center pt-1 border-t border-zinc-800 text-[11px]">
+                        <input type="text" placeholder="備註（例如：併9月現貨寄出）..." class="w-3/5 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1 focus:outline-none">
+                        <button onclick="cancelAndReassign('玩家小傑')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1 rounded-lg border border-red-500/30 font-bold">客人取消(改派)</button>
                     </div>
                 </div>
+
+                <!-- 範例 2 -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-2 shadow-lg">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" class="rounded bg-zinc-800 border-zinc-700">
+                            <span class="font-bold text-white">阿豪收藏庫 <span class="text-[10px] text-zinc-500">(@hao_figures)</span></span>
+                        </div>
+                        <span class="bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold text-[11px]">POPMART LABUBU (2隻)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-[11px]">
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">寄出：</span>
+                            <span id="shipBadge2" class="text-red-400 font-bold">未寄出</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'shipBadge2', '已寄出')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
+                        </div>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">收款：</span>
+                            <span id="payBadge2" class="text-red-400 font-bold">未收款</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'payBadge2', '已收款')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
+                        </div>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">上次通知：<span class="text-brandYellow font-mono">10-01 15:20</span></span>
+                            <button onclick="resendNotification('阿豪收藏庫')" class="ml-auto bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-1 rounded border border-zinc-700 font-bold">💬 發通知</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 border-t border-zinc-800 text-[11px]">
+                        <input type="text" placeholder="備註..." class="w-3/5 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1 focus:outline-none">
+                        <button onclick="cancelAndReassign('阿豪收藏庫')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1 rounded-lg border border-red-500/30 font-bold">客人取消(改派)</button>
+                    </div>
+                </div>
+
+                <!-- 範例 3 -->
+                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-2 shadow-lg">
+                    <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" class="rounded bg-zinc-800 border-zinc-700">
+                            <span class="font-bold text-white">美系玩具狂熱 <span class="text-[10px] text-zinc-500">(@us_toys)</span></span>
+                        </div>
+                        <span class="bg-brandYellow/20 text-brandYellow px-2 py-0.5 rounded font-bold text-[11px]">Spider-Man Figure (1隻)</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center text-[11px]">
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">寄出：</span>
+                            <span id="shipBadge3" class="text-green-400 font-bold">已寄出(10-03)</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'shipBadge3', '已寄出')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
+                        </div>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">收款：</span>
+                            <span id="payBadge3" class="text-green-400 font-bold">已收款(10-03)</span>
+                            <input type="date" onchange="updateInlineStatus(this, 'payBadge3', '已收款')" class="bg-zinc-800 border border-zinc-700 text-white rounded p-1 text-[10px] ml-auto">
+                        </div>
+                        <div class="flex justify-between sm:justify-start sm:space-x-2 items-center bg-zinc-950 p-2 rounded-xl border border-zinc-800">
+                            <span class="text-zinc-400">上次通知：<span class="text-brandYellow font-mono">10-03 09:00</span></span>
+                            <button onclick="resendNotification('美系玩具狂熱')" class="ml-auto bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-1 rounded border border-zinc-700 font-bold">💬 發通知</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center pt-1 border-t border-zinc-800 text-[11px]">
+                        <input type="text" value="已順利超商寄出" class="w-3/5 bg-zinc-800 border border-zinc-700 text-zinc-200 rounded-lg px-2 py-1 focus:outline-none">
+                        <button onclick="cancelAndReassign('美系玩具狂熱')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1 rounded-lg border border-red-500/30 font-bold">客人取消(改派)</button>
+                    </div>
+                </div>
+
             </div>
         </div>
     </main>
 
-    <!-- 1. 新增/編輯商品彈窗 (嚴格等寬、不重疊、發售/數量/起迄必填) -->
+    <!-- 1. 新增/編輯商品彈窗 (起迄日期強制與下方定價等寬不重疊) -->
     <div id="productModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3 max-h-[90vh] overflow-y-auto text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -189,7 +230,7 @@
                     <label class="block text-zinc-400 mb-1">商品圖片 (選填)</label>
                     <input type="file" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400">
                 </div>
-                <!-- 嚴格等寬雙欄格線 -->
+                <!-- 欄位等寬格線系統 -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">預計發售年月 <span class="text-red-400">*</span></label>
@@ -200,14 +241,15 @@
                         <input type="number" id="inputQuota" required value="30" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
+                <!-- 預購起迄日期 (與下方定價嚴格等寬) -->
                 <div class="grid grid-cols-2 gap-3">
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">預購開始日 <span class="text-red-400">*</span></label>
-                        <input type="datetime-local" id="inputStart" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <input type="date" id="inputStart" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                     <div class="w-full">
                         <label class="block text-zinc-400 mb-1">預購結束日 <span class="text-red-400">*</span></label>
-                        <input type="datetime-local" id="inputEnd" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
+                        <input type="date" id="inputEnd" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -251,7 +293,7 @@
         </div>
     </div>
 
-    <!-- 2. 到貨入庫彈窗 (含勾選派貨預購人) -->
+    <!-- 2. 到貨入庫彈窗 -->
     <div id="arrivedModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -282,7 +324,33 @@
         </div>
     </div>
 
-    <!-- 3. 預購人明細彈窗 -->
+    <!-- 3. 客戶取消改派專用彈窗 (選取剩下未分派的預購人) -->
+    <div id="reassignModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="text-sm font-bold text-brandYellow">🔄 訂單取消與名額改派</h3>
+                <button onclick="closeReassignModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
+            </div>
+            <p class="text-zinc-300" id="cancelTargetText">已取消 [玩家小傑] 的 1 個名額，請選擇要將此名額「改派」給哪位候補預購人：</p>
+            <div class="space-y-2">
+                <div class="max-h-44 overflow-y-auto bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 space-y-2">
+                    <label class="flex items-center space-x-2 text-zinc-300 cursor-pointer">
+                        <input type="radio" name="candidate" checked class="bg-zinc-800 border-zinc-700">
+                        <span>[09-02 10:15] 庫洛魔法使粉 (@kuro) - 候機 1 隻</span>
+                    </label>
+                    <label class="flex items-center space-x-2 text-zinc-300 cursor-pointer">
+                        <input type="radio" name="candidate" class="bg-zinc-800 border-zinc-700">
+                        <span>[09-02 16:40] 玩具大叔 (@uncle_toy) - 候機 1 隻</span>
+                    </label>
+                </div>
+            </div>
+            <button onclick="confirmReassign()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition shadow text-xs">
+                確認改派並發送 LINE 通知
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. 預購人明細彈窗 -->
     <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3 text-xs">
             <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
@@ -359,6 +427,7 @@
         }
 
         function closeProductModal() {
+            document.getElementById('productModal').classList.remove('hidden'); // fix
             document.getElementById('productModal').classList.remove('flex');
             document.getElementById('productModal').classList.add('hidden');
         }
@@ -400,25 +469,13 @@
             document.getElementById('detailModal').classList.add('hidden');
         }
 
-        // 點擊按鈕填寫出貨日期
-        function promptShippingDate() {
-            let date = prompt("請輸入出貨日期 (例如: 2026-10-15)：", "2026-10-15");
-            if (date) {
-                let badge = document.getElementById('shipBadge');
-                badge.className = "bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] font-bold inline-block";
-                badge.innerText = "已寄出 (" + date + ")";
-                alert(`已成功記錄出貨日期：${date}`);
-            }
-        }
-
-        // 點擊按鈕填寫收款日期
-        function promptPaymentDate() {
-            let date = prompt("請輸入收款日期 (例如: 2026-10-15)：", "2026-10-15");
-            if (date) {
-                let badge = document.getElementById('payBadge');
-                badge.className = "bg-green-500/20 text-green-400 px-2 py-0.5 rounded text-[10px] font-bold inline-block";
-                badge.innerText = "已收款 (" + date + ")";
-                alert(`已成功記錄收款日期：${date}`);
+        // 日曆選擇即時更新狀態與標籤
+        function updateInlineStatus(input, badgeId, textPrefix) {
+            if(input.value) {
+                let badge = document.getElementById(badgeId);
+                badge.className = "text-green-400 font-bold";
+                badge.innerText = `${textPrefix} (${input.value})`;
+                alert(`成功更新日期：${input.value}`);
             }
         }
 
@@ -428,10 +485,21 @@
             }
         }
 
+        // 觸發取消並開啟改派彈窗
         function cancelAndReassign(customer) {
-            if(confirm(`⚠️️ 確定要取消 [${customer}] 的訂單嗎？取消後名額將釋出，可隨時改派給候補預購人。`)) {
-                alert(`訂單已取消，名額已釋出並移至取消分頁。`);
-            }
+            document.getElementById('cancelTargetText').innerText = `已取消 [${customer}] 的名額，請選擇要將此名額「改派」給哪位候補預購人：`;
+            document.getElementById('reassignModal').classList.remove('hidden');
+            document.getElementById('reassignModal').classList.add('flex');
+        }
+
+        function closeReassignModal() {
+            document.getElementById('reassignModal').classList.remove('flex');
+            document.getElementById('reassignModal').classList.add('hidden');
+        }
+
+        function confirmReassign() {
+            alert(`已成功將名額改派給新買家，並自動發送 LINE 通知！`);
+            closeReassignModal();
         }
 
         function batchNotifyLine() {

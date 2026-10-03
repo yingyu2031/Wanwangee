@@ -321,17 +321,23 @@
     </div>
 
     <!-- 4. 預購人明細彈窗 -->
-    <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-lg w-full shadow-2xl space-y-3 text-xs">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-                <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">📊 預購人明細 (依下單時間排序)</h3>
-                <button onclick="closeDetailModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
-            </div>
-            <button onclick="closeDetailModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-xl transition">
-                關閉視窗
-            </button>
+<div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-3 text-xs">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+            <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">📊 預購人明細 (依下單時間排序)</h3>
+            <button onclick="closeDetailModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
         </div>
+        
+        <!-- 明細內容區塊 -->
+        <div id="detailModalContent" class="max-h-[60vh] overflow-y-auto space-y-2 text-zinc-300">
+            <p class="text-center text-zinc-500 py-4">載入中...</p>
+        </div>
+
+        <button onclick="closeDetailModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-xl transition mt-2">
+            關閉視窗
+        </button>
     </div>
+</div>
 
     <!-- 底部版權 -->
     <footer class="text-center py-4 text-xs text-zinc-600 border-t border-zinc-900">
@@ -434,7 +440,7 @@ async function loadProducts() {
                             <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
                         </div>
                         <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
-                            <button onclick="openDetailModal('${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
+                            <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
                                 預購人明細
                             </button>
                             <div class="space-x-1.5">
@@ -773,19 +779,82 @@ async function deleteProduct() {
 }
 
         
- // 檢視預購人明細 (依下單時間排序)
-        async function openDetailModal(productName) {
-            document.getElementById('detailModalTitle').innerText = `預購人明細 - ${productName}`;
-            document.getElementById('detailModal').classList.remove('hidden');
-            document.getElementById('detailModal').classList.add('flex');
-            
-            // 提示：後端可透過 GET /api/products/:product_id/orders 取得依 order_time 排序的買家名單
-        }
+ // 檢視預購人明細
+async function openDetailModal(productId, productName) {
+    const modal = document.getElementById('detailModal');
+    const title = document.getElementById('detailModalTitle');
+    const content = document.getElementById('detailModalContent');
 
-        function closeDetailModal() {
-            document.getElementById('detailModal').classList.remove('flex');
-            document.getElementById('detailModal').classList.add('hidden');
+    title.innerText = `預購人明細：${productName || '商品'} (依下單時間排序)`;
+    content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/products/${productId}/orders`);
+        const result = await res.json();
+
+        if (result.success) {
+            if (result.data.length > 0) {
+                // 組合成表格呈現明細
+                content.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-zinc-800 text-zinc-400">
+                                    <th class="p-2">下單時間</th>
+                                    <th class="p-2">買家暱稱/姓名</th>
+                                    <th class="p-2 text-center">數量</th>
+                                    <th class="p-2 text-center">付款狀態</th>
+                                    <th class="p-2 text-center">寄送狀態</th>
+                                    <th class="p-2">備註</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${result.data.map(order => {
+                                    const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
+                                    const paymentText = order.payment_status === 'paid' ? '<span class="text-green-400">已付款</span>' : '<span class="text-zinc-500">未付款</span>';
+                                    const shippingText = order.shipping_status === 'shipped' ? '<span class="text-green-400">已寄出</span>' : '<span class="text-zinc-500">未寄出</span>';
+                                    
+                                    return `
+                                        <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/30">
+                                            <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
+                                            <td class="p-2 font-bold text-white">${order.real_name || '未填寫真實姓名'} <span class="text-[10px] text-zinc-500">(${order.uid})</span></td>
+                                            <td class="p-2 text-center text-brandYellow font-bold">${order.quantity} 隻</td>
+                                            <td class="p-2 text-center">${paymentText}</td>
+                                            <td class="p-2 text-center">${shippingText}</td>
+                                            <td class="p-2 text-zinc-400">${order.memo || '-'}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                content.innerHTML = '<p class="text-center text-zinc-500 py-6">目前尚無任何預購明細記錄</p>';
+            }
+        } else {
+            content.innerHTML = '<p class="text-center text-red-400 py-6">載入明細失敗</p>';
         }
+    } catch (err) {
+        console.error('取得明細錯誤:', err);
+        content.innerHTML = '<p class="text-center text-red-400 py-6">伺服器連線失敗</p>';
+    }
+}
+
+// 關閉預購人明細彈窗
+function closeDetailModal() {
+    const modal = document.getElementById('detailModal');
+    if (modal) {
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+    }
+}
+
 
  // 到貨入庫與指定派貨彈窗
         function openArrivedModal(productName, quota) {

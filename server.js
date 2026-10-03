@@ -119,7 +119,7 @@ initDB();
 // --- 1. 管理員登入 API ---
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
-  if (username === 'Wanwangee' && password === 'P@ssw0rd') {
+  if (username === 'Wanwangee' && password === '123') {
     res.json({ success: true, message: '登入成功', token: 'wanwangee-admin-token-secret' });
   } else {
     res.status(401).json({ success: false, message: '帳號或密碼錯誤' });

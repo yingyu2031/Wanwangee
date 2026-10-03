@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOYHEART - 會員資料註冊與綁定</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 LINE LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandYellow: '#FFD637',
+                        brandBlack: '#000000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brandBlack text-white min-h-screen flex flex-col justify-between font-sans">
+
+    <!-- 頂部導覽列 -->
+    <header class="bg-brandYellow text-brandBlack sticky top-0 z-50 p-4 shadow-md flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+            </svg>
+            <div>
+                <span class="text-[10px] font-bold tracking-widest block opacity-75 leading-none">TOYHEART MEMBER</span>
+                <h1 class="text-base font-black tracking-wider">會員專屬資料綁定</h1>
+            </div>
+        </div>
+        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner" id="memberBadge">
+            ✨ VIP 預備軍
+        </div>
+    </header>
+
+    <!-- 主要表單內容區 -->
+    <main class="p-4 sm:p-6 max-w-lg mx-auto w-full flex-grow space-y-6">
+        
+        <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-xl space-y-4">
+            <div class="border-b border-zinc-800 pb-3">
+                <h2 class="text-sm font-bold text-brandYellow">📝 填寫收件與會員資料</h2>
+                <p class="text-xs text-zinc-400 mt-1">完成綁定後即可解鎖一鍵預購、訂單查詢與到貨自動通知功能！</p>
+            </div>
+
+            <form id="registerForm" onsubmit="submitMemberData(event)" class="space-y-3 text-xs">
+                <!-- LINE 顯示名稱 (唯讀) -->
+                <div>
+                    <label class="block text-zinc-400 mb-1">LINE 暱稱</label>
+                    <input type="text" id="lineNickname" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-300 font-bold">
+                </div>
+
+                <!-- LINE UID (隱藏或唯讀識別) -->
+                <div>
+                    <label class="block text-zinc-400 mb-1">LINE UID (系統辨識碼)</label>
+                    <input type="text" id="lineUid" readonly class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-500 font-mono text-[11px]">
+                </div>
+
+                <!-- 手機號碼 -->
+                <div>
+                    <label class="block text-zinc-400 mb-1">手機號碼 <span class="text-red-400">*</span></label>
+                    <input type="tel" id="phone" required placeholder="例如：0912345678" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+
+                <!-- 郵寄地址 -->
+                <div>
+                    <label class="block text-zinc-400 mb-1">常用郵寄地址 <span class="text-red-400">*</span></label>
+                    <textarea id="address" required rows="2" placeholder="例如：台北市信義區信義路五段7號..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow"></textarea>
+                </div>
+
+                <!-- 生日與性別 (雙欄) -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">生日日期</label>
+                        <input type="text" id="birthday" placeholder="例如：10-15" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">性別</label>
+                        <select id="gender" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                            <option value="不透露">不透露</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 提交按鈕 -->
+                <button type="submit" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg mt-4">
+                    確認送出並完成綁定
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- 底部版權 -->
+    <footer class="text-center py-4 text-xs text-zinc-600 border-t border-zinc-900">
+        &copy; 2026 TOYHEART Member System. All Rights Reserved.
+    </footer>
+
+    <!-- LIFF 初始化與前端互動邏輯 -->
+    <script>
+        // 初始化 LIFF
+        document.addEventListener("DOMContentLoaded", function () {
+            // 請替換成您的 LIFF ID (例如：1234567890-AbCdEfGh)
+            const MY_LIFF_ID = "YOUR_LIFF_ID_HERE"; 
+
+            liff.init({ liffId: MY_LIFF_ID })
+                .then(() => {
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                    } else {
+                        liff.getProfile().then(profile => {
+                            document.getElementById('lineNickname').value = profile.displayName;
+                            document.getElementById('lineUid').value = profile.userId;
+                        }).catch(err => {
+                            console.error('取得 LINE Profile 失敗', err);
+                        });
+                    }
+                })
+                .catch((err) => {
+                    console.log('LIFF 初始化失敗（若在外部瀏覽器測試為正常現象）', err);
+                    // 測試用模擬資料（方便您在一般瀏覽器預覽畫面）
+                    document.getElementById('lineNickname').value = "測試玩家小傑";
+                    document.getElementById('lineUid').value = "U_mock_uid_123456789";
+                });
+        });
+
+        // 提交會員資料到 Node.js 後端 API
+        function submitMemberData(event) {
+            event.preventDefault();
+
+            const memberData = {
+                uid: document.getElementById('lineUid').value,
+                line_nickname: document.getElementById('lineNickname').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                birthday: document.getElementById('birthday').value,
+                gender: document.getElementById('gender').value
+            };
+
+            // 這裡未來會串接您的後端 API (例如 fetch('/api/users/register', ...))
+            console.log("準備送出會員資料：", memberData);
+
+            alert('🎉 會員資料綁定成功！歡迎加入 TOYHEART 收藏行列。');
+            
+            // 若在 LINE App 內可自動關閉 LIFF 視窗
+            if (liff.isInClient()) {
+                liff.closeWindow();
+            }
+        }
+    </script>
+</body>
+</html>

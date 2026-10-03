@@ -351,7 +351,7 @@ app.get('/api/products/:id/orders', async (req, res) => {
       FROM orders o
       LEFT JOIN users u ON o.uid = u.uid
       WHERE o.product_id = $1
-      ORDER BY o.order_time DESC;
+      ORDER BY o.order_time ASC;
     `;
     
     const result = await pool.query(query, [id]);

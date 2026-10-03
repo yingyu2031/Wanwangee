@@ -24,13 +24,13 @@
 <body class="bg-brandBlack text-white min-h-screen flex flex-col justify-between font-sans relative">
 
     <!-- 未加入會員彈跳視窗 (Modal) -->
-    <div id="registerModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+    <div id="registerModal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
             <div class="w-12 h-12 bg-brandYellow/10 text-brandYellow rounded-full flex items-center justify-center mx-auto text-xl font-black">
-                ⚠️️
+                ⚠
             </div>
             <h3 class="text-lg font-black text-white">尚未加入 TOYHEART 會員</h3>
-            <p class="text-xs text-zinc-400">檢測到您的 LINE 帳號尚未完成實名與收件地址綁定，請點擊下方按鈕進行註冊以解鎖預購資格。</p>
+            <p class="text-xs text-zinc-400">檢測到您的 LINE 帳號尚未完成實名與收件資料綁定，請點擊下方按鈕進行註冊以解鎖預購資格。</p>
             <button onclick="closeModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg">
                 立即填寫註冊資料
             </button>
@@ -94,6 +94,11 @@
                 </div>
 
                 <div>
+                    <label class="block text-zinc-400 mb-1">電子信箱 (Email) <span class="text-red-400">*</span></label>
+                    <input type="email" id="email" required placeholder="例如：example@gmail.com" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                </div>
+
+                <div>
                     <label class="block text-zinc-400 mb-1">常用郵寄地址 <span class="text-red-400">*</span></label>
                     <textarea id="address" required rows="2" placeholder="例如：台北市信義區信義路五段7號..." class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow"></textarea>
                 </div>
@@ -147,8 +152,8 @@
                 })
                 .catch((err) => {
                     console.log('LIFF 初始化失敗（外部瀏覽器測試中）', err);
-                    // 測試用模擬 UID
-                    setupUserData("U_mock_uid_123456789", "測試玩家小傑", null);
+                    // 測試用模擬 UID (您可以切換不同的 UID 測試已綁定或未綁定)
+                    setupUserData("U_test_new_user_999", "測試新玩家", null);
                 });
         });
 
@@ -171,6 +176,7 @@
                     const user = result.data;
                     document.getElementById('realName').value = user.real_name || '';
                     document.getElementById('phone').value = user.phone || '';
+                    document.getElementById('email').value = user.email || '';
                     document.getElementById('address').value = user.address || '';
                     document.getElementById('birthday').value = user.birthday || '';
                     document.getElementById('gender').value = user.gender || '不透露';
@@ -178,11 +184,12 @@
                         document.getElementById('memberLevelTag').innerText = user.member_level;
                     }
                 } else {
-                    // 未綁定：顯示彈跳視窗
+                    // 未綁定：強制顯示彈跳視窗
                     document.getElementById('registerModal').classList.remove('hidden');
                 }
             } catch (error) {
                 console.error('檢查綁定狀態失敗:', error);
+                document.getElementById('registerModal').classList.remove('hidden');
             }
         }
 
@@ -198,6 +205,7 @@
                 line_nickname: document.getElementById('lineNicknameHidden').value,
                 real_name: document.getElementById('realName').value,
                 phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
                 address: document.getElementById('address').value,
                 birthday: document.getElementById('birthday').value,
                 gender: document.getElementById('gender').value

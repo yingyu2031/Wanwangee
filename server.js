@@ -206,49 +206,40 @@ app.get('/api/admin/users', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { year_month, keyword } = req.query;
-    
-    let query = `
-      SELECT p.*, 
-             -- 取得已分派的數量總和 (若無則為 0)
-             COALESCE(alloc.allocated_qty, 0) AS allocated_qty
-      FROM products p
+    let query = 'SELECT p.*,a.qty FROM products p
       LEFT JOIN (
-          SELECT product_id, SUM(quantity) as allocated_qty 
+          SELECT product_id, SUM(quantity) as qty 
           FROM orders 
           WHERE is_allocated IS TRUE OR is_allocated = '1' OR is_allocated = 1
           GROUP BY product_id
-      ) alloc ON p.id = alloc.product_id
-      WHERE 1=1
-    `;
-    
+      ) a ON p.id = a.product_id
+     WHERE 1=1';
     let values = [];
     let paramIndex = 1;
 
-    // 發售年月篩選
+    // 1. 發售年月篩選（如果不是 all 且有填寫，才加入條件）
     if (year_month && year_month !== 'all' && year_month.trim() !== '') {
-      query += ` AND p.year_month ILIKE $${paramIndex}`;
+      query += ` AND year_month ILIKE $${paramIndex}`;
       values.push(`%${year_month.trim()}%`);
       paramIndex++;
     }
 
-    // 品名關鍵字搜尋
+    // 2. 品名關鍵字搜尋
     if (keyword && keyword.trim() !== '') {
-      query += ` AND p.name ILIKE $${paramIndex}`;
+      query += ` AND name ILIKE $${paramIndex}`;
       values.push(`%${keyword.trim()}%`);
       paramIndex++;
     }
 
-    query += ' ORDER BY p.year_month DESC, p.end_time DESC';
+    // 3. 排序規則：第一排序發售年月新到舊，第二排序預購截止日新到舊
+    query += ' ORDER BY year_month DESC, end_time DESC';
 
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows });
   } catch (err) {
-    console.error("API 錯誤:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
-
 
 app.post('/api/products', async (req, res) => {
   try {

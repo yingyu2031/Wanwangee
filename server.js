@@ -379,13 +379,15 @@ app.post('/api/products/:id/allocate', async (req, res) => {
             return res.status(400).json({ success: false, message: '勾選分派人數大於實際到貨量！' });
         }
 
-        // 3. 批次更新各個訂單的 is_allocated 欄位
-        for (const item of allocations) {
-            await pool.query(
-                'UPDATE orders SET is_allocated = $1 WHERE id = $2',
-                [item.is_allocated, item.order_id]
-              );
-          }
+        // 3. 批次更新各個訂單的 is_allocated 欄位 (改用 order_no 對應)
+        if (allocations && Array.isArray(allocations)) {
+            for (const item of allocations) {
+                await pool.query(
+                    'UPDATE orders SET is_allocated = $1 WHERE order_no = $2',
+                    [item.is_allocated, item.order_no]
+                );
+            }
+        }
 
         res.json({ success: true, message: '更新成功' });
     } catch (err) {

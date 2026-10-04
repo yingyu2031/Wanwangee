@@ -320,22 +320,47 @@
         </div>
     </div>
 
-    <!-- 4. 預購人明細彈窗 -->
+<!-- 4. 預購人明細與到貨分派彈窗 -->
 <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-2xl w-full shadow-2xl space-y-3 text-xs">
         <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-            <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">預購人明細</h3>
+            <h3 class="text-sm font-bold text-brandYellow" id="detailModalTitle">預購人明細與到貨分派</h3>
             <button onclick="closeDetailModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
         </div>
         
+        <!-- 🚚 到貨量與分派狀態控制區塊 -->
+        <div class="bg-zinc-800/50 p-3 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-2 border border-zinc-700/50">
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <label for="actualStockInput" class="text-zinc-300 font-bold whitespace-nowrap">實際到貨量：</label>
+                <input 
+                    type="number" 
+                    id="actualStockInput" 
+                    min="0" 
+                    class="bg-zinc-950 border border-zinc-700 text-white px-3 py-1 rounded-lg w-24 text-center font-bold focus:outline-none focus:border-brandYellow"
+                    oninput="updateAllocationStatus()"
+                />
+            </div>
+            <div class="text-right">
+                <span id="allocationStatusText" class="font-bold text-zinc-300">
+                    已勾選分派：0 / 0
+                </span>
+            </div>
+        </div>
+
         <!-- 明細內容區塊 -->
-        <div id="detailModalContent" class="max-h-[60vh] overflow-y-auto space-y-2 text-zinc-300">
+        <div id="detailModalContent" class="max-h-[50vh] overflow-y-auto space-y-2 text-zinc-300">
             <p class="text-center text-zinc-500 py-4">載入中...</p>
         </div>
 
-        <button onclick="closeDetailModal()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2 rounded-xl transition mt-2">
-            關閉視窗
-        </button>
+        <!-- 按鈕區塊 -->
+        <div class="flex gap-2 pt-2">
+            <button onclick="saveProductAllocation()" class="flex-1 bg-brandYellow hover:bg-yellow-500 text-zinc-950 font-bold py-2.5 rounded-xl transition shadow-lg">
+                儲存分派結果
+            </button>
+            <button onclick="closeDetailModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 rounded-xl transition">
+                關閉視窗
+            </button>
+        </div>
     </div>
 </div>
 
@@ -778,14 +803,21 @@ async function deleteProduct() {
     }
 }
 
-// 開啟預購人明細彈窗
+// 全域變數用來暫存當前開啟的商品 ID 與訂單明細資料
+let currentProductId = null;
+let currentOrdersData = [];
+
+// 開啟預購人明細與到貨分派彈窗
 async function openDetailModal(productId, productName) {
+    currentProductId = productId;
     const modal = document.getElementById('detailModal');
     const title = document.getElementById('detailModalTitle');
     const content = document.getElementById('detailModalContent');
+    const actualStockInput = document.getElementById('actualStockInput');
 
-    title.innerText = `預購人明細：${productName || '商品'}`;
+    title.innerText = `到貨分派與預購明細：${productName || '商品'}`;
     content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
+    actualStockInput.value = 0;
 
     if (modal) {
         modal.classList.remove('hidden');
@@ -793,57 +825,179 @@ async function openDetailModal(productId, productName) {
     }
 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/products/${productId}/orders`);
-        const result = await res.json();
+        // 同步取得商品資訊（包含 actual_stock）與該商品的預購訂單
+        const [productRes, ordersRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/products/${productId}`),
+            fetch(`${API_BASE_URL}/api/products/${productId}/orders`)
+        ]);
 
-        if (result.success) {
-            if (result.data.length > 0) {
-                // 計算總預購數量
-                const totalQty = result.data.reduce((sum, order) => sum + (Number(order.quantity) || 0), 0);
+        const productResult = await productRes.json();
+        const ordersResult = await ordersRes.json();
 
-                // 只保留前三欄，並在底部加入小計
-                content.innerHTML = `
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-zinc-800 text-zinc-400">
-                                    <th class="p-2">下單時間</th>
-                                    <th class="p-2">暱稱 (姓名)</th>
-                                    <th class="p-2 text-center">數量</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${result.data.map(order => {
-                                    const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
-                                    const nickname = order.line_nickname || '*';
-                                    const realName = order.real_name || '*';
-                                    
-                                    return `
-                                        <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/30">
-                                            <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
-                                            <td class="p-2 font-bold text-white">${nickname} <span class="text-[10px] text-zinc-500">(${realName})</span></td>
-                                            <td class="p-2 text-center text-brandYellow font-bold">${order.quantity}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                        <!-- 最下方小計預購總數量 -->
-                        <div class="mt-3 pt-3 border-t border-zinc-800 flex justify-between items-center px-2 text-zinc-300 font-bold">
-                            <span>預購總數量小計：</span>
-                            <span class="text-brandYellow text-sm">${totalQty}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                content.innerHTML = '<p class="text-center text-zinc-500 py-6">目前尚無任何預購明細記錄</p>';
-            }
+        if (productResult.success) {
+            actualStockInput.value = productResult.data.actual_stock || 0;
+        }
+
+        if (ordersResult.success) {
+            currentOrdersData = ordersResult.data || [];
+            renderAllocationTable();
         } else {
             content.innerHTML = '<p class="text-center text-red-400 py-6">載入明細失敗</p>';
         }
     } catch (err) {
-        console.error('取得明細錯誤:', err);
+        console.error('取得資料錯誤:', err);
         content.innerHTML = '<p class="text-center text-red-400 py-6">伺服器連線失敗</p>';
+    }
+}
+
+// 渲染表格內容
+function renderAllocationTable() {
+    const content = document.getElementById('detailModalContent');
+    
+    if (currentOrdersData.length === 0) {
+        content.innerHTML = '<p class="text-center text-zinc-500 py-6">目前尚無任何預購明細記錄</p>';
+        updateAllocationStatus();
+        return;
+    }
+
+    const totalQty = currentOrdersData.reduce((sum, order) => sum + (Number(order.quantity) || 0), 0);
+
+    content.innerHTML = `
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-zinc-800 text-zinc-400">
+                        <th class="p-2 text-center w-12">分派</th>
+                        <th class="p-2">下單時間</th>
+                        <th class="p-2">暱稱 (姓名)</th>
+                        <th class="p-2 text-center">數量</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${currentOrdersData.map((order, index) => {
+                        const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
+                        const nickname = order.line_nickname || '*';
+                        const realName = order.real_name || '*';
+                        // 確保 is_allocated 是 boolean
+                        const isChecked = order.is_allocated ? 'checked' : '';
+                        
+                        return `
+                            <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition">
+                                <td class="p-2 text-center">
+                                    <input 
+                                        type="checkbox" 
+                                        class="allocation-checkbox w-4 h-4 accent-brandYellow rounded cursor-pointer"
+                                        data-index="${index}"
+                                        ${isChecked}
+                                        onchange="handleCheckboxChange(${index})"
+                                    />
+                                </td>
+                                <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
+                                <td class="p-2 font-bold text-white">${nickname} <span class="text-[10px] text-zinc-500">(${realName})</span></td>
+                                <td class="p-2 text-center text-brandYellow font-bold">${order.quantity}</td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+            <!-- 最下方小計預購總數量 -->
+            <div class="mt-3 pt-3 border-t border-zinc-800 flex justify-between items-center px-2 text-zinc-300 font-bold">
+                <span>預購總數量小計：</span>
+                <span class="text-brandYellow text-sm">${totalQty} 組/隻</span>
+            </div>
+        </div>
+    `;
+
+    updateAllocationStatus();
+}
+
+// 當勾選框變動時的防呆控制與計算
+function handleCheckboxChange(index) {
+    const checkboxes = document.querySelectorAll('.allocation-checkbox');
+    const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
+    
+    // 更新記憶體中的狀態
+    currentOrdersData[index].is_allocated = checkboxes[index].checked;
+
+    // 計算目前已勾選的人數
+    const checkedCount = currentOrdersData.filter(o => o.is_allocated).length;
+
+    // 防呆：如果勾選人數超過實際到貨量，強制取消並提示
+    if (checkedCount > actualStock) {
+        checkboxes[index].checked = false;
+        currentOrdersData[index].is_allocated = false;
+        alert(`已勾選人數 (${checkedCount}) 已超過實際到貨量 (${actualStock})！`);
+    }
+
+    updateAllocationStatus();
+}
+
+// 更新畫面上「已勾選人數 / 實際到貨量」狀態，並同步控管 checkbox 是否能點選
+function updateAllocationStatus() {
+    const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
+    const checkedCount = currentOrdersData.filter(o => o.is_allocated).length;
+    const statusText = document.getElementById('allocationStatusText');
+    const checkboxes = document.querySelectorAll('.allocation-checkbox');
+
+    // 顯示狀態
+    statusText.innerText = `已勾選分派：${checkedCount} / ${actualStock}`;
+    if (checkedCount > actualStock) {
+        statusText.classList.add('text-red-400');
+        statusText.classList.remove('text-zinc-300');
+    } else {
+        statusText.classList.remove('text-red-400');
+        statusText.classList.add('text-zinc-300');
+    }
+
+    // 當達到實際到貨量上限時，自動把所有「未勾選」的 Checkbox 轉為 disabled
+    checkboxes.forEach((cb, index) => {
+        if (!currentOrdersData[index].is_allocated && checkedCount >= actualStock) {
+            cb.disabled = true;
+            cb.closest('tr').classList.add('opacity-40');
+        } else {
+            cb.disabled = false;
+            cb.closest('tr').classList.remove('opacity-40');
+        }
+    });
+}
+
+// 儲存分派結果至後端
+async function saveProductAllocation() {
+    if (!currentProductId) return;
+
+    const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
+    
+    // 整理要送給後端的資料
+    const payload = {
+        actual_stock: actualStock,
+        allocations: currentOrdersData.map(order => ({
+            order_id: order.id, // 請確保您的訂單唯一識別欄位是 id 或 order_id
+            is_allocated: order.is_allocated ? true : false
+        }))
+    };
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/products/${currentProductId}/allocate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // 若有 Bearer Token 請在此加入
+                // 'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            alert('到貨分派儲存成功！');
+            closeDetailModal();
+            // 若首頁有商品列表刷新函式可以在此呼叫，例如 loadProducts();
+        } else {
+            alert(`儲存失敗：${result.message || '未知錯誤'}`);
+        }
+    } catch (err) {
+        console.error('儲存分派連線錯誤:', err);
+        alert('伺服器連線失敗，無法儲存');
     }
 }
 

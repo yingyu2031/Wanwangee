@@ -958,7 +958,7 @@ async function saveProductAllocation() {
     const payload = {
         actual_stock: actualStock,
         allocations: currentOrdersData.map(order => ({
-            order_id: order.id,
+            order_no: order.order_no, // 改用 order_no
             is_allocated: order.is_allocated ? true : false
         }))
     };

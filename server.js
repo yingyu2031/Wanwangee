@@ -207,45 +207,52 @@ app.get('/api/products', async (req, res) => {
   try {
     const { year_month, keyword } = req.query;
     
-    // 結合原本的條件，並透過 LEFT JOIN 計算實際到貨量與未分派數量
     let query = `
       SELECT p.*, 
-             COALESCE(arr.total_arrived, 0) AS actual_arrival,
-             COALESCE(unalloc.unallocated_qty, 0) AS unallocated_qty
+             COALESCE(ord.total_orders, 0) AS total_orders,
+             COALESCE(arr.actual_arrival, 0) AS actual_arrival,
+             -- 剩餘可分派量 = 實際到貨量 - 已被分派的訂單總量
+             (COALESCE(arr.actual_arrival, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
       FROM products p
       LEFT JOIN (
-          SELECT product_id, SUM(quantity) as total_arrived 
+          SELECT product_id, SUM(quantity) as total_orders 
+          FROM orders 
+          GROUP BY product_id
+      ) ord ON p.id = ord.product_id
+      LEFT JOIN (
+          -- 實際到貨總數（你可以從到貨記錄或以 is_allocated = TRUE 計算，此處為實際到貨累計）
+          SELECT product_id, SUM(quantity) as actual_arrival 
           FROM orders 
           WHERE is_allocated = TRUE 
           GROUP BY product_id
       ) arr ON p.id = arr.product_id
       LEFT JOIN (
-          SELECT product_id, SUM(quantity) as unallocated_qty 
+          -- 已分派出去的數量
+          SELECT product_id, SUM(quantity) as allocated_qty 
           FROM orders 
-          WHERE (is_allocated IS NOT TRUE OR is_allocated = FALSE) 
+          WHERE is_allocated = TRUE 
           GROUP BY product_id
-      ) unalloc ON p.id = unalloc.product_id
+      ) alloc ON p.id = alloc.product_id
       WHERE 1=1
     `;
     
     let values = [];
     let paramIndex = 1;
 
-    // 1. 發售年月篩選（如果不是 all 且有填寫，才加入條件）
+    // 發售年月篩選
     if (year_month && year_month !== 'all' && year_month.trim() !== '') {
       query += ` AND p.year_month ILIKE $${paramIndex}`;
       values.push(`%${year_month.trim()}%`);
       paramIndex++;
     }
 
-    // 2. 品名關鍵字搜尋
+    // 品名關鍵字搜尋
     if (keyword && keyword.trim() !== '') {
       query += ` AND p.name ILIKE $${paramIndex}`;
       values.push(`%${keyword.trim()}%`);
       paramIndex++;
     }
 
-    // 3. 排序規則維持不變：第一排序發售年月新到舊，第二排序預購截止日新到舊
     query += ' ORDER BY p.year_month DESC, p.end_time DESC';
 
     const result = await pool.query(query, values);
@@ -254,6 +261,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 app.post('/api/products', async (req, res) => {
   try {

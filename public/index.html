@@ -546,7 +546,7 @@ async function loadProducts() {
                                 <p class="text-zinc-400">總預購量: <span class="text-brandYellow font-bold">${p.quota} </span></p>
                                 <p class="text-zinc-400">
                                     實際到貨: <span class="text-green-400 font-bold">${p.actual_stock}</span> | 
-                                    已分派: <span class="text-zinc-200 font-bold">${a.qty}</span>
+                                    已分派: <span class="text-zinc-200 font-bold">${p.qty || 0}</span>
                                 </p>
                             </div>
                             <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">

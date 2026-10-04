@@ -547,8 +547,8 @@ async function loadProducts() {
                                 <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
                                 <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
                                 <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
-                                <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${totalOrders} 组</span></p>
-                                <p class="text-zinc-400">實際到貨: <span class="text-green-400 font-bold">${actualArrival} 组</span></p>
+                                <p class="text-zinc-400">總預購量: <span class="text-brandYellow font-bold">${p.quota} </span></p>
+                                <p class="text-zinc-400">實際到貨: <span class="text-green-400 font-bold">${p.actual_stock} </span>| <span class="text-brandYellow font-bold">剩餘: ${unallocated_qty}</span></p>
                             </div>
                             <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
                                 <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">

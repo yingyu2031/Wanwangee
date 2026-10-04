@@ -223,7 +223,7 @@ app.get('/api/products', async (req, res) => {
           FROM orders 
           WHERE is_allocated IS TRUE OR is_allocated = '1' OR is_allocated = 1
           GROUP BY product_id
-      ) alloc ON p.id = alloc.id
+      ) alloc ON p.id = alloc.product_id
       WHERE 1=1
     `;
     

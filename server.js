@@ -209,10 +209,10 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             -- 1. 總預購量 (來自 p.quota)
+             -- 1. 總預購量 (來自商品資料表的 quota)
              COALESCE(p.quota, 0) AS total_orders,
              
-             -- 2. 實際到貨量 (來自 p.actual_stock)
+             -- 2. 實際到貨量 (來自商品資料表的 actual_stock)
              COALESCE(p.actual_stock, 0) AS actual_arrival,
              
              -- 3. 剩餘未分派量 = 實際到貨量 (p.actual_stock) - 已分派量
@@ -244,11 +244,13 @@ app.get('/api/products', async (req, res) => {
       paramIndex++;
     }
 
+    // 排序規則
     query += ' ORDER BY p.year_month DESC, p.end_time DESC';
 
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows });
   } catch (err) {
+    console.error("API 錯誤:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

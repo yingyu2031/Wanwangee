@@ -435,13 +435,13 @@
 // 記錄目前選中的年月（預設為系統當前 2026-10）
 let currentSelectedYM = '2026-10';
 
-// 頁面載入時初始化月份頁籤並載入商品
+// 頁面載入時初始化書籤式月份頁籤並載入商品
 document.addEventListener('DOMContentLoaded', () => {
     initMonthTabs();
     loadProducts();
 });
 
-// 初始化 12 個月份頁籤
+// 初始化 12 個書籤式月份頁籤
 function initMonthTabs() {
     const container = document.getElementById('monthTabsContainer');
     if (!container) return;
@@ -455,13 +455,13 @@ function initMonthTabs() {
         const ymValue = `${selectedYear}-${monthStr}`;
         const isActive = (ymValue === currentSelectedYM);
 
-        // 選中時顯示品牌黃色底與黑字，未選中時顯示深灰底與白字
+        // 書籤式樣式：選中時為品牌黃底黑字粗體，未選中時為深灰底白字
         const activeClass = isActive 
-            ? 'bg-brandYellow text-brandBlack font-black shadow' 
+            ? 'bg-brandYellow text-brandBlack font-black shadow-lg scale-105' 
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold';
 
         html += `
-            <button onclick="selectMonthTab('${ymValue}')" class="px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition ${activeClass}">
+            <button onclick="selectMonthTab('${ymValue}')" class="px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all duration-200 ${activeClass}">
                 ${i} 月
             </button>
         `;
@@ -482,14 +482,14 @@ function onYearChange() {
     loadProducts();
 }
 
-// 點擊特定月份頁籤
+// 點擊特定月份書籤
 function selectMonthTab(ym) {
     currentSelectedYM = ym;
     initMonthTabs(); 
     loadProducts();  
 }
 
-// 載入商品 API（基於你提供的邏輯改造，支援 12 個月頁籤與關鍵字搜尋）
+// 載入商品 API
 async function loadProducts() {
     const keyword = document.getElementById('searchKeyword') ? document.getElementById('searchKeyword').value : '';
     const grid = document.getElementById('productsGrid');
@@ -516,7 +516,7 @@ async function loadProducts() {
                             <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
                             <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
                             <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
-                            <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
+                            <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} </span></p>
                         </div>
                         <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
                             <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
@@ -537,6 +537,7 @@ async function loadProducts() {
         grid.innerHTML = '<div class="text-red-400 text-xs p-6 text-center col-span-full">載入失敗，請稍後再試</div>';
     }
 }
+
 
 
         // 載入訂單 API

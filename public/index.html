@@ -312,23 +312,23 @@
         </div>
         
         <!-- 🚚 到貨量與分派狀態控制區塊 -->
-        <div class="bg-zinc-800/50 p-3 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-2 border border-zinc-700/50">
-            <div class="flex items-center gap-2 w-full sm:w-auto">
-                <label for="actualStockInput" class="text-zinc-300 font-bold whitespace-nowrap">實際到貨量：</label>
-                <input 
-                    type="number" 
-                    id="actualStockInput" 
-                    min="0" 
-                    class="bg-zinc-950 border border-zinc-700 text-white px-3 py-1 rounded-lg w-24 text-center font-bold focus:outline-none focus:border-brandYellow"
-                    oninput="updateAllocationStatus()"
-                />
-            </div>
-            <div class="text-right">
-                <span id="allocationStatusText" class="font-bold text-zinc-300">
-                    已勾選分派：0 / 0
-                </span>
-            </div>
-        </div>
+                <div class="bg-zinc-800/50 p-3 rounded-xl flex flex-col items-center justify-center gap-2 border border-zinc-700/50 text-center">
+                    <div class="flex items-center justify-center gap-2 w-full">
+                            <label for="actualStockInput" class="text-zinc-300 font-bold whitespace-nowrap">實際到貨量：</label>
+                        <input 
+                            type="number" 
+                            id="actualStockInput" 
+                            min="0" 
+                            class="bg-zinc-950 border border-zinc-700 text-white px-3 py-1 rounded-lg w-24 text-center font-bold focus:outline-none focus:border-brandYellow"
+                            oninput="updateAllocationStatus()"
+                        />
+                    </div>
+                    <div class="w-full text-center">
+                        <span id="allocationStatusText" class="font-bold text-zinc-300">
+                            已勾選分派數量：0 / 0
+                        </span>
+                    </div>
+                </div>
 
         <!-- 明細內容區塊 -->
         <div id="detailModalContent" class="max-h-[50vh] overflow-y-auto space-y-2 text-zinc-300">

@@ -384,8 +384,8 @@ app.post('/api/products/:id/allocate', async (req, res) => {
             await pool.query(
                 'UPDATE orders SET is_allocated = $1 WHERE id = $2',
                 [item.is_allocated, item.order_id]
-            );
-        }
+              );
+          }
 
         res.json({ success: true, message: '更新成功' });
     } catch (err) {

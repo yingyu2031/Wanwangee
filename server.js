@@ -209,7 +209,8 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             COALESCE(alloc.allocated_qty, 0)) AS allocated_qty
+             -- 取得已分派的數量總和 (若無則為 0)
+             COALESCE(alloc.allocated_qty, 0) AS allocated_qty
       FROM products p
       LEFT JOIN (
           SELECT product_id, SUM(quantity) as allocated_qty 
@@ -237,7 +238,6 @@ app.get('/api/products', async (req, res) => {
       paramIndex++;
     }
 
-    // 排序規則
     query += ' ORDER BY p.year_month DESC, p.end_time DESC';
 
     const result = await pool.query(query, values);
@@ -247,6 +247,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 app.post('/api/products', async (req, res) => {

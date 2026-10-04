@@ -230,7 +230,7 @@ app.get('/api/products', async (req, res) => {
     let values = [];
     let paramIndex = 1;
 
-    // 發售年月篩選
+    // 發售年月篩選（檢查這裡是否如預期運作）
     if (year_month && year_month !== 'all' && year_month.trim() !== '') {
       query += ` AND p.year_month ILIKE $${paramIndex}`;
       values.push(`%${year_month.trim()}%`);
@@ -252,6 +252,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 
 app.post('/api/products', async (req, res) => {

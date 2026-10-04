@@ -288,23 +288,6 @@
         <p class="text-white font-bold text-sm tracking-wider">商品上架與圖片處理中，請稍候...</p>
     </div>
 
-    <!-- 2. 到貨入庫彈窗 -->
-    <div id="arrivedModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-                <h3 class="text-sm font-bold text-brandYellow">到貨入庫與指定派貨</h3>
-                <button onclick="closeArrivedModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
-            </div>
-            <p class="text-zinc-400" id="arrivedProductName">商品名稱</p>
-            <div class="space-y-1">
-                <label class="block text-zinc-300 font-bold">本次實際到貨數量：</label>
-                <input type="number" id="actualArrivalQty" value="18" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white font-bold text-sm">
-            </div>
-            <button onclick="confirmArrival()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition shadow">
-                確認入庫並分派選定預購人
-            </button>
-        </div>
-    </div>
 
     <!-- 3. 客戶取消改派專用彈窗 -->
     <div id="reassignModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
@@ -469,8 +452,7 @@ async function loadProducts() {
                                 預購人明細
                             </button>
                             <div class="space-x-1.5">
-                                <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-700 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-700">編輯</button>
-                                <button onclick="openArrivedModal(${p.id}, '${p.name}', ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+                                <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-600/20 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-500/30">編輯</button>
                             </div>
                         </div>
                     </div>
@@ -825,7 +807,6 @@ async function openDetailModal(productId, productName) {
     }
 
     try {
-        // 同步取得商品資訊（包含 actual_stock）與該商品的預購訂單
         const [productRes, ordersRes] = await Promise.all([
             fetch(`${API_BASE_URL}/api/products/${productId}`),
             fetch(`${API_BASE_URL}/api/products/${productId}/orders`)
@@ -878,7 +859,6 @@ function renderAllocationTable() {
                         const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
-                        // 確保 is_allocated 是 boolean
                         const isChecked = order.is_allocated ? 'checked' : '';
                         
                         return `
@@ -911,7 +891,7 @@ function renderAllocationTable() {
     updateAllocationStatus();
 }
 
-// 當勾選框變動時的防呆控制與計算
+// 當勾選框變動時的防呆控制與計算（改為計算數量總和）
 function handleCheckboxChange(index) {
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
@@ -919,29 +899,36 @@ function handleCheckboxChange(index) {
     // 更新記憶體中的狀態
     currentOrdersData[index].is_allocated = checkboxes[index].checked;
 
-    // 計算目前已勾選的人數
-    const checkedCount = currentOrdersData.filter(o => o.is_allocated).length;
+    // 計算目前已勾選的「總數量」
+    const allocatedQty = currentOrdersData
+        .filter(o => o.is_allocated)
+        .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
 
-    // 防呆：如果勾選人數超過實際到貨量，強制取消並提示
-    if (checkedCount > actualStock) {
+    // 防呆：如果勾選後的總數量超過實際到貨量，強制取消並提示
+    if (allocatedQty > actualStock) {
         checkboxes[index].checked = false;
         currentOrdersData[index].is_allocated = false;
-        alert(`已勾選人數 (${checkedCount}) 已超過實際到貨量 (${actualStock})！`);
+        alert(`已勾選的總數量 (${allocatedQty}) 已超過實際到貨量 (${actualStock})！`);
     }
 
     updateAllocationStatus();
 }
 
-// 更新畫面上「已勾選人數 / 實際到貨量」狀態，並同步控管 checkbox 是否能點選
+// 更新畫面上狀態文字與控管 Checkbox 是否能點選
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
-    const checkedCount = currentOrdersData.filter(o => o.is_allocated).length;
+    
+    // 計算目前已勾選的總數量
+    const allocatedQty = currentOrdersData
+        .filter(o => o.is_allocated)
+        .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
+        
     const statusText = document.getElementById('allocationStatusText');
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
 
-    // 顯示狀態
-    statusText.innerText = `已勾選分派：${checkedCount} / ${actualStock}`;
-    if (checkedCount > actualStock) {
+    // 顯示狀態改為數量統計
+    statusText.innerText = `已勾選分派數量：${allocatedQty} / ${actualStock}`;
+    if (allocatedQty > actualStock) {
         statusText.classList.add('text-red-400');
         statusText.classList.remove('text-zinc-300');
     } else {
@@ -949,9 +936,10 @@ function updateAllocationStatus() {
         statusText.classList.add('text-zinc-300');
     }
 
-    // 當達到實際到貨量上限時，自動把所有「未勾選」的 Checkbox 轉為 disabled
+    // 當剩餘到貨量不足以負荷該筆項目的數量時，自動將未勾選的項目轉為 disabled
     checkboxes.forEach((cb, index) => {
-        if (!currentOrdersData[index].is_allocated && checkedCount >= actualStock) {
+        const itemQty = Number(currentOrdersData[index].quantity) || 0;
+        if (!currentOrdersData[index].is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;
             cb.closest('tr').classList.add('opacity-40');
         } else {
@@ -967,11 +955,10 @@ async function saveProductAllocation() {
 
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
-    // 整理要送給後端的資料
     const payload = {
         actual_stock: actualStock,
         allocations: currentOrdersData.map(order => ({
-            order_id: order.id, // 請確保您的訂單唯一識別欄位是 id 或 order_id
+            order_id: order.id,
             is_allocated: order.is_allocated ? true : false
         }))
     };
@@ -981,8 +968,6 @@ async function saveProductAllocation() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                // 若有 Bearer Token 請在此加入
-                // 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(payload)
         });
@@ -991,7 +976,6 @@ async function saveProductAllocation() {
         if (result.success) {
             alert('到貨分派儲存成功！');
             closeDetailModal();
-            // 若首頁有商品列表刷新函式可以在此呼叫，例如 loadProducts();
         } else {
             alert(`儲存失敗：${result.message || '未知錯誤'}`);
         }
@@ -1010,75 +994,6 @@ function closeDetailModal() {
     }
 }
 
-
-// 記錄目前正在操作到貨入庫的商品 ID
-let currentArrivedProductId = null;
-
-// 點擊商品卡片上的「到貨入庫」按鈕時呼叫
-function openArrivedModal(productId, productName, maxQuota) {
-    currentArrivedProductId = productId;
-    
-    document.getElementById('arrivedProductName').innerText = `商品名稱：${productName || '未知商品'}`;
-    document.getElementById('actualArrivalQty').value = maxQuota || 10; // 預設帶入總配額或 10
-
-    const modal = document.getElementById('arrivedModal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-}
-
-// 關閉到貨入庫彈窗
-function closeArrivedModal() {
-    currentArrivedProductId = null;
-    const modal = document.getElementById('arrivedModal');
-    if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-    }
-}
-
-// 確認入庫並分派選定預購人
-async function confirmArrival() {
-    if (!currentArrivedProductId) {
-        alert('找不到商品編號');
-        return;
-    }
-
-    const arrivalQty = document.getElementById('actualArrivalQty').value;
-    if (!arrivalQty || arrivalQty <= 0) {
-        alert('請輸入正確的到貨數量！');
-        return;
-    }
-
-    const isConfirmed = confirm(`確定要入庫 ${arrivalQty} 個名額，並自動依下單順序派貨給最早預購的買家嗎？`);
-    if (!isConfirmed) return;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/products/${currentArrivedProductId}/allocate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ arrival_qty: arrivalQty })
-        });
-        const result = await response.json();
-
-        if (result.success) {
-            alert(result.message);
-            closeArrivedModal();
-            if (typeof loadProducts === 'function') {
-                loadProducts(); // 重新整理列表
-            }
-        } else {
-            alert('派貨失敗：' + (result.message || '未知錯誤'));
-        }
-    } catch (error) {
-        console.error('API 錯誤:', error);
-        alert('連線伺服器失敗，請稍後再試。');
-    }
-}
-
-
-   
 
         function promptDate(badgeId, textPrefix) {
             let date = prompt("請選擇/輸入日期 (格式 YYYY-MM-DD)：", "2026-10-15");

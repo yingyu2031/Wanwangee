@@ -422,6 +422,7 @@
 
 // 載入商品 API
 async function loadProducts() {
+    content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
     const ym = document.getElementById('filterYearMonth').value;
     try {
         const res = await fetch(`${API_BASE_URL}/api/products?year_month=${ym}`);

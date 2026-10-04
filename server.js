@@ -361,6 +361,41 @@ app.get('/api/products/:id/orders', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+// 後端接收儲存分派與實際到貨量
+app.post('/api/products/:id/allocate', async (req, res) => {
+    const productId = req.params.id;
+    const { actual_stock, allocations } = req.body;
+
+    try {
+        // 1. 更新 products 表的 actual_stock
+        await pool.query(
+            'UPDATE products SET actual_stock = $1 WHERE id = $2',
+            [actual_stock, productId]
+        );
+
+        // 2. 檢查總勾選人數是否超過 actual_stock（後端嚴格防呆）
+        const checkedCount = allocations.filter(item => item.is_allocated).length;
+        if (checkedCount > actual_stock) {
+            return res.status(400).json({ success: false, message: '勾選分派人數大於實際到貨量！' });
+        }
+
+        // 3. 批次更新各個訂單的 is_allocated 欄位
+        for (const item of allocations) {
+            await pool.query(
+                'UPDATE orders SET is_allocated = $1 WHERE id = $2',
+                [item.is_allocated, item.order_id]
+            );
+        }
+
+        res.json({ success: true, message: '更新成功' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '資料庫更新失敗' });
+    }
+});
+
+
 // --- 到貨入庫與指定派貨 API ---
 app.post('/api/products/:id/allocate', async (req, res) => {
   const client = await pool.connect();

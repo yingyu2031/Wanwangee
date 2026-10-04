@@ -533,16 +533,6 @@ async function loadProducts() {
                     const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
                     const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
                     const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
-
-                    const totalOrders = p.quota || 0;
-                    const actualArrival = p.actual_stock || 0;
-                    
-                    // 修正：必須使用 p.allocated_qty 來取得後端算好的已分派數量
-                    const allocatedQty = p.allocated_qty || 0;
-                    
-                    // 前端直接計算：剩餘 = 實際到貨量 - 已分派量 (防呆小於 0 顯示 0)
-                    const unallocatedQty = Math.max(0, actualArrival - allocatedQty);
-
                     return `
                         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
                             <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
@@ -553,11 +543,10 @@ async function loadProducts() {
                                 <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
                                 <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
                                 <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
-                                <p class="text-zinc-400">總預購量: <span class="text-brandYellow font-bold">${totalOrders} </span></p>
+                                <p class="text-zinc-400">總預購量: <span class="text-brandYellow font-bold">${p.quota} </span></p>
                                 <p class="text-zinc-400">
-                                    實際到貨: <span class="text-green-400 font-bold">${actualArrival}</span> | 
-                                    已分派: <span class="text-zinc-200 font-bold">${allocatedQty}</span> | 
-                                    剩餘: <span class="text-brandYellow font-bold">${unallocatedQty}</span>
+                                    實際到貨: <span class="text-green-400 font-bold">${p.actual_stock}</span> | 
+                                    已分派: <span class="text-zinc-200 font-bold">${a.qty}</span>
                                 </p>
                             </div>
                             <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">

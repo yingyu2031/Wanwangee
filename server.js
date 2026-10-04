@@ -209,32 +209,20 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             -- 1. 總預購量 (計算 orders 裡該商品總共被預購了幾隻)
-             COALESCE(ord.total_orders, 0) AS total_orders,
+             -- 1. 總預購量 (來自商品資料表的 quota)
+             COALESCE(p.quota, 0) AS total_orders,
              
-             -- 2. 實際到貨量 (此處以 orders 中已標記 is_allocated = TRUE 的數量為例，或你可以直接讓前端/後端帶入)
-             COALESCE(arr.actual_arrival, 0) AS actual_arrival,
+             -- 2. 實際到貨量 (來自商品資料表的 actual_stock)
+             COALESCE(p.actual_stock, 0) AS actual_arrival,
              
-             -- 3. 剩餘未分派量 = 實際到貨量 - 已分派量 (若還沒開始分派，就等於實際到貨量)
-             (COALESCE(arr.actual_arrival, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
+             -- 3. 剩餘未分派量 = 實際到貨量 (actual_stock) - 已分派量 (is_allocated = true 的訂單總量)
+             (COALESCE(p.actual_stock, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
       FROM products p
       LEFT JOIN (
-          SELECT product_id, SUM(quantity) as total_orders 
-          FROM orders 
-          GROUP BY product_id
-      ) ord ON p.id = ord.product_id
-      LEFT JOIN (
-          -- 計算真正已經入庫/到貨的數量
-          SELECT product_id, SUM(quantity) as actual_arrival 
-          FROM orders 
-          WHERE is_allocated = TRUE 
-          GROUP BY product_id
-      ) arr ON p.id = arr.product_id
-      LEFT JOIN (
-          -- 計算已完成分派的數量
+          -- 計算已成功勾選分派的數量總和
           SELECT product_id, SUM(quantity) as allocated_qty 
           FROM orders 
-          WHERE is_allocated = TRUE 
+          WHERE is_allocated IS TRUE OR is_allocated = '1' OR is_allocated = 1
           GROUP BY product_id
       ) alloc ON p.id = alloc.product_id
       WHERE 1=1
@@ -265,7 +253,6 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 
 
 app.post('/api/products', async (req, res) => {

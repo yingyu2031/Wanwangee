@@ -206,14 +206,14 @@ app.get('/api/admin/users', async (req, res) => {
 app.get('/api/products', async (req, res) => {
   try {
     const { year_month, keyword } = req.query;
-    let query = 'SELECT p.*,a.qty FROM products p
+    let query = `SELECT p.*, a.qty FROM products p
       LEFT JOIN (
           SELECT product_id, SUM(quantity) as qty 
           FROM orders 
-          WHERE is_allocated IS TRUE OR is_allocated = '1' OR is_allocated = 1
+          WHERE is_allocated IS TRUE 
           GROUP BY product_id
       ) a ON p.id = a.product_id
-     WHERE 1=1';
+     WHERE 1=1`;
     let values = [];
     let paramIndex = 1;
 
@@ -240,6 +240,7 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 app.post('/api/products', async (req, res) => {
   try {

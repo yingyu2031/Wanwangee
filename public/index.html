@@ -514,15 +514,18 @@ function selectMonthTab(ym) {
 
 // 載入商品 API
 async function loadProducts() {
-    const keyword = document.getElementById('searchKeyword') ? document.getElementById('searchKeyword').value.trim() : '';
-    const grid = document.getElementById('productsGrid');
+    const ymInput = document.getElementById('filterYearMonth');
+    const ym = ymInput ? ymInput.value.trim() : '';
+    const keywordInput = document.getElementById('searchKeyword');
+    const keyword = keywordInput ? keywordInput.value.trim() : '';
     
+    const grid = document.getElementById('productsGrid');
     if (grid) {
         grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">載入中...</div>';
     }
-    
+
     try {
-        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${encodeURIComponent(currentSelectedYM)}&keyword=${encodeURIComponent(keyword)}`);
+        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${encodeURIComponent(ym)}&keyword=${encodeURIComponent(keyword)}`);
         const result = await res.json();
         
         if (grid) {
@@ -531,6 +534,10 @@ async function loadProducts() {
                     const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
                     const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
                     const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
+
+                    // 實際到貨與未分派數量 (若後端欄位為空則預設 0)
+                    const actualArrival = p.actual_arrival || 0;
+                    const unallocatedQty = p.unallocated_qty || 0;
 
                     return `
                         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
@@ -542,7 +549,8 @@ async function loadProducts() {
                                 <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
                                 <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
                                 <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
-                                <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
+                                <p class="text-zinc-400">預購量: <span class="text-brandYellow font-bold">${p.quota} </span></p>
+                                <p class="text-zinc-400">實際到貨: <span class="text-green-400 font-bold">${actualArrival} </span> | 剩餘: <span class="text-brandYellow font-bold">${unallocatedQty} </span></p>
                             </div>
                             <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
                                 <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
@@ -556,7 +564,7 @@ async function loadProducts() {
                     `;
                 }).join('');
             } else {
-                grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">該月份目前尚無商品資料</div>';
+                grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">目前尚無商品資料</div>';
             }
         }
     } catch (err) {

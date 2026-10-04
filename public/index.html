@@ -93,19 +93,31 @@
 
 <!-- ================= 區塊 A：商品上架與預購管理 ================= -->
 <div id="productsSection" class="space-y-4">
-    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
-        <div class="flex items-center space-x-2 w-full sm:w-auto">
-            <span class="text-xs text-zinc-400 whitespace-nowrap">發售年月：</span>
-            <input type="text" id="filterYearMonth" placeholder="例如: 2026-10" oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none w-full sm:w-48">
+    <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col space-y-3">
+        <!-- 第一行：年份下拉選單與品名關鍵字搜尋 -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <span class="text-xs text-zinc-400 whitespace-nowrap">發售年份：</span>
+                <select id="filterYear" onchange="onYearChange()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none w-full sm:w-36">
+                    <option value="2025">2025 年</option>
+                    <option value="2026" selected>2026 年</option>
+                    <option value="2027">2027 年</option>
+                </select>
+            </div>
+            <div class="flex items-center space-x-2 w-full sm:w-auto">
+                <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
+            </div>
         </div>
-        <div class="flex items-center space-x-2 w-full sm:w-auto">
-            <span class="text-xs text-zinc-400 whitespace-nowrap">預購商品：</span>
-            <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-48 focus:outline-none focus:border-brandYellow">
+
+        <!-- 第二行：固定 12 個月份的橫向頁籤 -->
+        <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 pt-2 border-t border-zinc-800" id="monthTabsContainer">
+            <!-- 透過 JS 動態生成 01 ~ 12 月頁籤 -->
         </div>
     </div>
-            <button onclick="openProductModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2.5 rounded-xl transition shadow whitespace-nowrap">
-                ＋ 上架新商品
-            </button>
+
+    <button onclick="openProductModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-2.5 rounded-xl transition shadow whitespace-nowrap text-center">
+        ＋ 上架新商品
+    </button>
 
     <!-- 商品清單網格 -->
     <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -420,17 +432,76 @@
             loadOrders(subTab);
         }
 
-// 載入商品 API
+// 記錄目前選中的年月（預設為系統當前 2026-10）
+let currentSelectedYM = '2026-10';
+
+// 頁面載入時初始化月份頁籤並載入商品
+document.addEventListener('DOMContentLoaded', () => {
+    initMonthTabs();
+    loadProducts();
+});
+
+// 初始化 12 個月份頁籤
+function initMonthTabs() {
+    const container = document.getElementById('monthTabsContainer');
+    if (!container) return;
+
+    const yearSelect = document.getElementById('filterYear');
+    const selectedYear = yearSelect ? yearSelect.value : '2026';
+
+    let html = '';
+    for (let i = 1; i <= 12; i++) {
+        const monthStr = i < 10 ? `0${i}` : `${i}`;
+        const ymValue = `${selectedYear}-${monthStr}`;
+        const isActive = (ymValue === currentSelectedYM);
+
+        // 選中時顯示品牌黃色底與黑字，未選中時顯示深灰底與白字
+        const activeClass = isActive 
+            ? 'bg-brandYellow text-brandBlack font-black shadow' 
+            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold';
+
+        html += `
+            <button onclick="selectMonthTab('${ymValue}')" class="px-3 py-1.5 rounded-lg text-xs whitespace-nowrap transition ${activeClass}">
+                ${i} 月
+            </button>
+        `;
+    }
+    container.innerHTML = html;
+}
+
+// 當年份下拉選單改變時
+function onYearChange() {
+    const yearSelect = document.getElementById('filterYear');
+    const selectedYear = yearSelect.value;
+    
+    // 切換年份時，保留原本的月份數字，組合成新的年月
+    const monthPart = currentSelectedYM.split('-')[1] || '10';
+    currentSelectedYM = `${selectedYear}-${monthPart}`;
+
+    initMonthTabs();
+    loadProducts();
+}
+
+// 點擊特定月份頁籤
+function selectMonthTab(ym) {
+    currentSelectedYM = ym;
+    initMonthTabs(); 
+    loadProducts();  
+}
+
+// 載入商品 API（基於你提供的邏輯改造，支援 12 個月頁籤與關鍵字搜尋）
 async function loadProducts() {
-    const ym = document.getElementById('filterYearMonth').value;
+    const keyword = document.getElementById('searchKeyword') ? document.getElementById('searchKeyword').value : '';
     const grid = document.getElementById('productsGrid');
+    
     grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">載入中...</div>';
+    
     try {
-        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${ym}`);
+        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${currentSelectedYM}&keyword=${encodeURIComponent(keyword)}`);
         const result = await res.json();
+        
         if (result.success && result.data.length > 0) {
             grid.innerHTML = result.data.map(p => {
-                // 格式化預購期間顯示 (只取前 10 碼 YYYY-MM-DD)
                 const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
                 const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
                 const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
@@ -453,18 +524,21 @@ async function loadProducts() {
                             </button>
                             <div class="space-x-1.5">
                                 <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-600/20 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-500/30">編輯</button>
+                                <button onclick="openArrivedModal(${p.id}, '${p.name}', ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
                             </div>
                         </div>
                     </div>
                 `;
             }).join('');
         } else {
-            grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">目前尚無商品資料</div>';
+            grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">該月份目前尚無商品資料</div>';
         }
     } catch (err) {
         console.error(err);
+        grid.innerHTML = '<div class="text-red-400 text-xs p-6 text-center col-span-full">載入失敗，請稍後再試</div>';
     }
 }
+
 
         // 載入訂單 API
         async function loadOrders(status) {

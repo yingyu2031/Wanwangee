@@ -209,15 +209,19 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
+             -- 1. 總預購量 (來自 p.quota)
              COALESCE(p.quota, 0) AS total_orders,
+             
+             -- 2. 實際到貨量 (來自 p.actual_stock)
              COALESCE(p.actual_stock, 0) AS actual_arrival,
-             (COALESCE(arr.actual_arrival, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
+             
+             -- 3. 剩餘未分派量 = 實際到貨量 (p.actual_stock) - 已分派量
+             (COALESCE(p.actual_stock, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
       FROM products p
       LEFT JOIN (
-          -- 已分派總數（is_allocated = TRUE）
           SELECT product_id, SUM(quantity) as allocated_qty 
           FROM orders 
-          WHERE is_allocated = TRUE 
+          WHERE is_allocated IS TRUE OR is_allocated = '1' OR is_allocated = 1
           GROUP BY product_id
       ) alloc ON p.id = alloc.product_id
       WHERE 1=1

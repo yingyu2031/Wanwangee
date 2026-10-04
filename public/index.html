@@ -94,15 +94,10 @@
 <!-- ================= 區塊 A：商品上架與預購管理 ================= -->
 <div id="productsSection" class="space-y-4">
     <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col space-y-3">
-        <!-- 第一行：年份下拉選單與品名關鍵字搜尋 -->
+        <!-- 第一行：年份文字輸入框與品名關鍵字搜尋 -->
         <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div class="flex items-center space-x-2 w-full sm:w-auto">
-                <span class="text-xs text-zinc-400 whitespace-nowrap">發售年份：</span>
-                <select id="filterYear" onchange="onYearChange()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none w-full sm:w-36">
-                    <option value="2025">2025 年</option>
-                    <option value="2026" selected>2026 年</option>
-                    <option value="2027">2027 年</option>
-                </select>
+            <div class="w-full sm:w-auto">
+                <input type="text" id="filterYearInput" value="2026" placeholder="輸入年份 (例如: 2026)" oninput="onYearInputChange()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none focus:border-brandYellow w-full sm:w-64">
             </div>
             <div class="flex items-center space-x-2 w-full sm:w-auto">
                 <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
@@ -432,8 +427,13 @@
             loadOrders(subTab);
         }
 
-// 記錄目前選中的年月（預設為系統當前 2026-10）
-let currentSelectedYM = '2026-10';
+// 動態取得系統當前年月 (格式為 YYYY-MM，例如 2026-10)
+function getCurrentYearMonth() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
 
 // 頁面載入時初始化書籤式月份頁籤並載入商品
 document.addEventListener('DOMContentLoaded', () => {
@@ -446,8 +446,8 @@ function initMonthTabs() {
     const container = document.getElementById('monthTabsContainer');
     if (!container) return;
 
-    const yearSelect = document.getElementById('filterYear');
-    const selectedYear = yearSelect ? yearSelect.value : '2026';
+    const yearInput = document.getElementById('filterYearInput');
+    const selectedYear = yearInput && yearInput.value.trim() !== '' ? yearInput.value.trim() : '2026';
 
     let html = '';
     for (let i = 1; i <= 12; i++) {
@@ -455,7 +455,7 @@ function initMonthTabs() {
         const ymValue = `${selectedYear}-${monthStr}`;
         const isActive = (ymValue === currentSelectedYM);
 
-        // 書籤式樣式：選中時為品牌黃底黑字粗體，未選中時為深灰底白字
+        // 書籤式樣式：選中時為品牌黃底黑字，未選中時為深灰底白字
         const activeClass = isActive 
             ? 'bg-brandYellow text-brandBlack font-black shadow-lg scale-105' 
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold';
@@ -469,14 +469,14 @@ function initMonthTabs() {
     container.innerHTML = html;
 }
 
-// 當年份下拉選單改變時
-function onYearChange() {
-    const yearSelect = document.getElementById('filterYear');
-    const selectedYear = yearSelect.value;
+// 當年份文字輸入框改變時
+function onYearInputChange() {
+    const yearInput = document.getElementById('filterYearInput');
+    const selectedYear = yearInput ? yearInput.value.trim() : '2026';
     
-    // 切換年份時，保留原本的月份數字，組合成新的年月
+    // 保留原本選中的月份數字，結合新的年份
     const monthPart = currentSelectedYM.split('-')[1] || '10';
-    currentSelectedYM = `${selectedYear}-${monthPart}`;
+    currentSelectedYM = `${selectedYear || '2026'}-${monthPart}`;
 
     initMonthTabs();
     loadProducts();
@@ -491,53 +491,59 @@ function selectMonthTab(ym) {
 
 // 載入商品 API
 async function loadProducts() {
-    const keyword = document.getElementById('searchKeyword') ? document.getElementById('searchKeyword').value : '';
+    const keyword = document.getElementById('searchKeyword') ? document.getElementById('searchKeyword').value.trim() : '';
     const grid = document.getElementById('productsGrid');
     
-    grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">載入中...</div>';
+    if (grid) {
+        grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">載入中...</div>';
+    }
     
     try {
-        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${currentSelectedYM}&keyword=${encodeURIComponent(keyword)}`);
+        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${encodeURIComponent(currentSelectedYM)}&keyword=${encodeURIComponent(keyword)}`);
         const result = await res.json();
         
-        if (result.success && result.data.length > 0) {
-            grid.innerHTML = result.data.map(p => {
-                const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
-                const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
-                const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
+        if (grid) {
+            if (result.success && result.data.length > 0) {
+                grid.innerHTML = result.data.map(p => {
+                    const startDate = p.start_time ? p.start_time.substring(0, 10) : '';
+                    const endDate = p.end_time ? p.end_time.substring(0, 10) : '';
+                    const periodText = (startDate && endDate) ? `${startDate} ~ ${endDate}` : '未設定';
 
-                return `
-                    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
-                        <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
-                            <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
-                            ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
-                        </div>
-                        <div class="space-y-1 text-xs">
-                            <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
-                            <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
-                            <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
-                            <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} </span></p>
-                        </div>
-                        <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
-                            <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
-                                預購人明細
-                            </button>
-                            <div class="space-x-1.5">
-                                <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-600/20 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-500/30">編輯</button>
+                    return `
+                        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-xl">
+                            <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative">
+                                <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px]">${p.year_month} 發售</span>
+                                ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover">` : '<span class="text-xs text-zinc-500">商品圖片預覽</span>'}
+                            </div>
+                            <div class="space-y-1 text-xs">
+                                <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
+                                <p class="text-zinc-400">定價: NT$ ${p.price} | <span class="text-brandYellow font-bold">預購價: NT$ ${p.pre_price}</span></p>
+                                <p class="text-zinc-400">預購期間: <span class="text-zinc-200">${periodText}</span></p>
+                                <p class="text-zinc-400">總配額: <span class="text-brandYellow font-bold">${p.quota} 组</span></p>
+                            </div>
+                            <div class="pt-3 border-t border-zinc-800 flex items-center justify-between">
+                                <button onclick="openDetailModal(${p.id}, '${p.name}')" class="bg-zinc-800 hover:bg-zinc-700 text-brandYellow text-xs px-3 py-2 rounded-xl border border-zinc-700 font-bold transition">
+                                    預購人明細
+                                </button>
+                                <div class="space-x-1.5">
+                                    <button onclick="openEditModal(${p.id})" class="bg-zinc-800 hover:bg-zinc-600/20 text-xs font-bold px-3 py-2 rounded-xl border border-zinc-500/30">編輯</button>
+                                    <button onclick="openArrivedModal(${p.id}, '${p.name}', ${p.quota})" class="bg-green-600/20 text-green-400 hover:bg-green-600/30 text-xs font-bold px-3 py-2 rounded-xl border border-green-500/30">到貨入庫</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">該月份目前尚無商品資料</div>';
+                    `;
+                }).join('');
+            } else {
+                grid.innerHTML = '<div class="text-zinc-500 text-xs p-6 text-center col-span-full">該月份目前尚無商品資料</div>';
+            }
         }
     } catch (err) {
         console.error(err);
-        grid.innerHTML = '<div class="text-red-400 text-xs p-6 text-center col-span-full">載入失敗，請稍後再試</div>';
+        if (grid) {
+            grid.innerHTML = '<div class="text-red-400 text-xs p-6 text-center col-span-full">載入失敗，請稍後再試</div>';
+        }
     }
 }
-
 
 
         // 載入訂單 API

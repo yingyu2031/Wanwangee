@@ -345,9 +345,8 @@ app.get('/api/products/:id/orders', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 查詢該商品的所有訂單，並透過 LEFT JOIN 抓取會員的真實姓名
     const query = `
-      SELECT o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo,
+      SELECT o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo, o.is_allocated,
              u.real_name, u.uid, u.line_nickname
       FROM orders o
       LEFT JOIN users u ON o.uid = u.uid
@@ -395,90 +394,6 @@ app.post('/api/products/:id/allocate', async (req, res) => {
     }
 });
 
-
-// --- 到貨入庫與指定派貨 API ---
-app.post('/api/products/:id/allocate', async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { id } = req.params; // 商品 ID
-    const { arrival_qty } = req.body; // 本次實際到貨數量
-
-    if (!arrival_qty || arrival_qty <= 0) {
-      return res.status(400).json({ success: false, message: '請輸入有效的到貨數量' });
-    }
-
-    await client.query('BEGIN'); // 開始交易
-
-    // 1. 找出該商品所有尚未派貨 (is_allocated = false) 的訂單，依照下單時間由早到晚排序
-    const ordersQuery = `
-      SELECT order_no, quantity 
-      FROM orders 
-      WHERE product_id = $1 AND (is_allocated IS NOT TRUE OR is_allocated = FALSE)
-      ORDER BY order_time ASC;
-    `;
-    const ordersResult = await client.query(ordersQuery, [id]);
-    const pendingOrders = ordersResult.rows;
-
-    let remainingArrival = parseInt(arrival_qty, 10);
-    let allocatedCount = 0;
-
-    // 2. 依照庫存依序派貨給買家
-    for (const order of pendingOrders) {
-      if (remainingArrival <= 0) break;
-
-      const orderQty = parseInt(order.quantity, 10);
-
-      // 如果剩餘到貨量足夠分配這張訂單
-      if (remainingArrival >= orderQty) {
-        await client.query(
-          `UPDATE orders SET is_allocated = TRUE, shipping_status = 'shipped' WHERE order_no = $1`,
-          [order.order_no]
-        );
-        remainingArrival -= orderQty;
-        allocatedCount++;
-      } else {
-        // 如果到貨量不夠整張訂單（視需求決定是否部分派貨，此處為保留未足額部分）
-        break;
-      }
-    }
-
-    await client.query('COMMIT'); // 提交交易
-    res.json({ 
-      success: true, 
-      message: `入庫成功！已成功為 ${allocatedCount} 筆預購單完成派貨。` 
-    });
-
-  } catch (err) {
-    await client.query('ROLLBACK'); // 發生錯誤復原
-    console.error('到貨派貨錯誤:', err);
-    res.status(500).json({ success: false, message: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// --- 4. 訂單與派貨管理 API ---
-app.get('/api/admin/orders', async (req, res) => {
-  try {
-    const { status } = req.query;
-    let query = `
-      SELECT o.*, u.line_nickname, u.real_name, u.phone, p.name AS product_name 
-      FROM orders o
-      JOIN users u ON o.uid = u.uid
-      JOIN products p ON o.product_id = p.id
-    `;
-    let values = [];
-    if (status) {
-      query += ' WHERE o.status = $1';
-      values.push(status);
-    }
-    query += ' ORDER BY o.order_time ASC';
-    const result = await pool.query(query, values);
-    res.json({ success: true, data: result.rows });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
 
 app.patch('/api/orders/:order_id/status', async (req, res) => {
   try {

@@ -209,13 +209,7 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             -- 1. 總預購量 (來自商品資料表的 quota)
-             COALESCE(p.quota, 0) AS total_orders,
-             
-             -- 2. 實際到貨量 (來自商品資料表的 actual_stock)
-             COALESCE(p.actual_stock, 0) AS actual_arrival,
-             
-             -- 3. 剩餘未分派量 = 實際到貨量 (p.actual_stock) - 已分派量
+             -- 剩餘未分派量 = 實際到貨量 (p.actual_stock) - 已分派量
              (COALESCE(p.actual_stock, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
       FROM products p
       LEFT JOIN (

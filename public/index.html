@@ -856,7 +856,7 @@ function renderAllocationTable() {
                 </thead>
                 <tbody>
                     ${currentOrdersData.map((order, index) => {
-                        const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(0, 16) : '';
+                        const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(5, 16) : '';
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         const isChecked = order.is_allocated ? 'checked' : '';
@@ -883,7 +883,7 @@ function renderAllocationTable() {
             <!-- 最下方小計預購總數量 -->
             <div class="mt-3 pt-3 border-t border-zinc-800 flex justify-between items-center px-2 text-zinc-300 font-bold">
                 <span>預購總數量小計：</span>
-                <span class="text-brandYellow text-sm">${totalQty} 組/隻</span>
+                <span class="text-brandYellow text-sm">${totalQty} </span>
             </div>
         </div>
     `;

@@ -209,20 +209,37 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             -- 1. 總預購量 (來自 p.quota)
-             COALESCE(p.quota, 0) AS total_orders,
-             
-             -- 2. 實際到貨量 (來自 p.actual_stock)
-             COALESCE(p.actual_stock, 0) AS actual_arrival,
-            
+             COALESCE(ord.total_orders, 0) AS total_orders,
+             COALESCE(arr.actual_arrival, 0) AS actual_arrival,
+             -- 剩餘可分派量 = 實際到貨量 - 已被分派的訂單總量
+             (COALESCE(arr.actual_arrival, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
       FROM products p
+      LEFT JOIN (
+          SELECT product_id, SUM(quantity) as total_orders 
+          FROM orders 
+          GROUP BY product_id
+      ) ord ON p.id = ord.product_id
+      LEFT JOIN (
+          -- 實際到貨總數（你可以從到貨記錄或以 is_allocated = TRUE 計算，此處為實際到貨累計）
+          SELECT product_id, SUM(quantity) as actual_arrival 
+          FROM orders 
+          WHERE is_allocated = TRUE 
+          GROUP BY product_id
+      ) arr ON p.id = arr.product_id
+      LEFT JOIN (
+          -- 已分派出去的數量
+          SELECT product_id, SUM(quantity) as allocated_qty 
+          FROM orders 
+          WHERE is_allocated = TRUE 
+          GROUP BY product_id
+      ) alloc ON p.id = alloc.product_id
       WHERE 1=1
     `;
     
     let values = [];
     let paramIndex = 1;
 
-    // 發售年月篩選（檢查這裡是否如預期運作）
+    // 發售年月篩選
     if (year_month && year_month !== 'all' && year_month.trim() !== '') {
       query += ` AND p.year_month ILIKE $${paramIndex}`;
       values.push(`%${year_month.trim()}%`);
@@ -244,7 +261,6 @@ app.get('/api/products', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 
 
 app.post('/api/products', async (req, res) => {

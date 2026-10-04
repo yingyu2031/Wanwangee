@@ -209,8 +209,7 @@ app.get('/api/products', async (req, res) => {
     
     let query = `
       SELECT p.*, 
-             -- 剩餘未分派量 = 實際到貨量 (p.actual_stock) - 已分派量
-             (COALESCE(p.actual_stock, 0) - COALESCE(alloc.allocated_qty, 0)) AS unallocated_qty
+             COALESCE(alloc.allocated_qty, 0)) AS allocated_qty
       FROM products p
       LEFT JOIN (
           SELECT product_id, SUM(quantity) as allocated_qty 

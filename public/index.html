@@ -1148,7 +1148,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染表格內容（已修復屬性間距與成交反灰鎖定）        
+// 2. 渲染表格內容（已修復屬性間距與成交反灰鎖定）             
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1177,10 +1177,12 @@ function renderAllocationTable() {
                         const timeStr = order.order_time ? order.order_time.replace('T', ' ').substring(5, 16) : '';
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
-                        const isChecked = order.is_allocated ? 'checked' : '';
                         
-                        // 關鍵：如果狀態是「成交」，強制鎖定 (disabled) 並反灰，不允許取消勾選
+                        // 關鍵修正 1：如果狀態是「成交」，強制預設為勾選狀態 (checked)，不管資料庫的 is_allocated 是什麼
                         const isCompleted = (order.status === '成交');
+                        const isChecked = (isCompleted || order.is_allocated) ? 'checked' : '';
+                        
+                        // 關鍵修正 2：成交狀態強制鎖定 (disabled) 並反灰
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
@@ -1200,8 +1202,8 @@ function renderAllocationTable() {
                                         type="checkbox" 
                                         class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}"
                                         data-index="${index}"
-                                        ${isChecked}
-                                        ${isCompleted ? 'disabled' : ''} 
+                                        value="1"
+                                        ${isChecked}${disabledAttr}
                                         onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>
@@ -1221,6 +1223,13 @@ function renderAllocationTable() {
             </div>
         </div>
     `;
+
+    // 同步把記憶體中成交項目的 is_allocated 設為 true，確保計算數量正確
+    currentOrdersData.forEach(order => {
+        if (order.status === '成交') {
+            order.is_allocated = true;
+        }
+    });
 
     updateAllocationStatus();
 }

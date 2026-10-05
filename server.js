@@ -401,9 +401,12 @@ app.post('/api/products/:id/allocate', async (req, res) => {
                         [item.order_no]
                     );
                 } else {
-                    // 未勾選或取消分派時：is_allocated 設為 false
+                    // 未勾選或取消分派時（且狀態原本是交易中的話）：將 is_allocated 設為 false，並把 status 變回空值 (NULL)
+                    // 注意：若狀態已經是「成交」或「取消」，則不允許因為分派勾選變動而被覆蓋
                     await pool.query(
-                        'UPDATE orders SET is_allocated = FALSE WHERE order_no = $1',
+                        `UPDATE orders 
+                         SET is_allocated = FALSE, status = CASE WHEN status = '交易中' THEN NULL ELSE status END 
+                         WHERE order_no = $1`,
                         [item.order_no]
                     );
                 }

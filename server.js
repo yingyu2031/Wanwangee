@@ -382,7 +382,15 @@ app.post('/api/products/:id/allocate', async (req, res) => {
             [actual_stock, productId]
         );
 
-        // 2. 檢查總勾選數量是否超過 actual_stock（後端嚴格防呆）
+        // 2. 先從資料庫撈出目前該商品所有訂單的原本狀態與分派狀況（用於防呆驗證）
+        const currentOrdersRes = await pool.query(
+            'SELECT order_no, status, is_allocated FROM orders WHERE product_id = $1',
+            [productId]
+        );
+        const dbOrdersMap = new Map();
+        currentOrdersRes.rows.forEach(row => dbOrdersMap.set(row.order_no, row));
+
+        // 3. 檢查總勾選數量是否超過 actual_stock（後端嚴格防呆）
         const checkedQty = allocations
             .filter(item => item.is_allocated)
             .reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
@@ -391,18 +399,26 @@ app.post('/api/products/:id/allocate', async (req, res) => {
             return res.status(400).json({ success: false, message: '勾選分派的總數量大於實際到貨量！' });
         }
 
-        // 3. 批次更新各個訂單的 is_allocated 與 status
+        // 4. 批次更新各個訂單的 is_allocated 與 status
         if (allocations && Array.isArray(allocations)) {
             for (const item of allocations) {
+                const dbOrder = dbOrdersMap.get(item.order_no);
+                
+                // 防呆保護：如果資料庫中原本就是「成交」狀態，不允許透過前端分派介面做任何變動
+                if (dbOrder && dbOrder.status === '成交') {
+                    continue; 
+                }
+
                 if (item.is_allocated) {
-                    // 勾選分派時：is_allocated 設為 true，同時將狀態改為「交易中」
+                    // 勾選分派時（不管是原本空白、取消、還是未分派）：is_allocated 設為 true，狀態改為「交易中」
                     await pool.query(
                         'UPDATE orders SET is_allocated = TRUE, status = \'交易中\' WHERE order_no = $1',
                         [item.order_no]
                     );
                 } else {
-                    // 未勾選或取消分派時（且狀態原本是交易中的話）：將 is_allocated 設為 false，並把 status 變回空值 (NULL)
-                    // 注意：若狀態已經是「成交」或「取消」，則不允許因為分派勾選變動而被覆蓋
+                    // 取消勾選時：is_allocated 設為 false
+                    // 如果原本狀態是「交易中」，拿掉勾選後變回空值 (NULL)
+                    // 如果原本是「取消」狀態，拿掉勾選則維持「取消」
                     await pool.query(
                         `UPDATE orders 
                          SET is_allocated = FALSE, status = CASE WHEN status = '交易中' THEN NULL ELSE status END 
@@ -418,6 +434,7 @@ app.post('/api/products/:id/allocate', async (req, res) => {
         console.error(err);
         res.status(500).json({ success: false, message: '資料庫更新失敗' });
     }
+});
 });
 
 // 到貨與出貨對帳名單明細api

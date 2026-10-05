@@ -112,14 +112,13 @@
             <!-- 透過 JS 動態生成書籤式月份按鈕 -->
         </div>
 
-        <!-- 3. 內頁主容器：改用 -mt-2，讓它剛好貼住頁籤底部而不覆蓋 -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
+        <!-- 3. 內頁主容器 -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-1 pt-4">
             
             <!-- 上架新商品按鈕 -->
             <button onclick="openProductModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-3 rounded-xl transition shadow-md whitespace-nowrap text-center flex items-center justify-center space-x-1">
                 <span>＋ 上架新商品</span>
             </button>
-
             <!-- 商品清單網格 -->
             <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <!-- 動態載入商品 -->
@@ -644,7 +643,7 @@ function switchSubTab(status) {
                                 <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isShipped ? '已寄出' : '未寄出'}
                                 </span>
-                                <button onclick="updateOrderStatus(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
+                                   <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
                             </div>
                         </td>
                         <td class="p-3">
@@ -652,7 +651,7 @@ function switchSubTab(status) {
                                 <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isPaid ? '已收款' : '未收款'}
                                 </span>
-                                <button onclick="updateOrderStatus(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
+                                <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
                             </div>
                         </td>
                         <td class="p-3 text-zinc-400 font-mono text-[11px]">
@@ -676,23 +675,59 @@ function switchSubTab(status) {
     }
 }
 
-        // 點擊出貨或收款按鈕時呼叫
-async function updateOrderStatus(id, type, statusValue) {
+
+// 點擊「出貨」或「收款」按鈕時觸發的彈窗與更新函式
+async function promptDate(badgeId, targetStatus) {
+    // 1. 取得當前系統日期作為預設值 (格式: YYYY-MM-DD)
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 2. 判斷是出貨還是收款 (對應後端的 type)
+    const type = targetStatus === '已寄出' ? 'shipping' : 'payment';
+    const actionName = targetStatus === '已寄出' ? '出貨日期' : '收款日期';
+
+    // 3. 彈出視窗讓管理者輸入或確認日期
+    const inputDate = prompt(`請輸入${actionName} (格式: YYYY-MM-DD):`, today);
+    
+    // 如果按了取消就直接返回
+    if (inputDate === null) return; 
+
+    // 4. 從按鈕或 DOM 取得對應的訂單 ID
+    // 假設您的 HTML 按鈕帶有訂單 id，我們可以直接從傳入的 badgeId (例如 shipBadge${id}) 抓取數字部分
+    const idMatch = badgeId.match(/\d+/);
+    if (!idMatch) {
+        alert('找不到對應的訂單編號');
+        return;
+    }
+    const orderId = idMatch[0];
+
+    // 5. 呼叫更新狀態的 API
+    await updateOrderStatus(orderId, type, targetStatus, inputDate);
+}
+
+// 實際發送 API 更新出貨/收款狀態
+async function updateOrderStatus(id, type, statusValue, dateValue) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: type, status: statusValue, date: new Date().toISOString() })
+            body: JSON.stringify({ 
+                type: type, 
+                status: statusValue, 
+                date: dateValue || new Date().toISOString() 
+            })
         });
+        
         const result = await res.json();
         if (result.success) {
-            // 重新載入當前分頁資料以即時更新畫面與狀態
+            // 更新成功後，重新載入當前分頁資料
+            // 若同時達成已出貨與已收款，後端會自動將 status 改為「成交」
             loadOrders(currentStatus || '交易中');
         } else {
             alert('更新失敗: ' + result.message);
         }
     } catch (err) {
         console.error('更新狀態發生錯誤:', err);
+        alert('網路連線或伺服器錯誤');
     }
 }
 

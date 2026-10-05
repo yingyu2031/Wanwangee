@@ -235,10 +235,22 @@
                 <label class="block text-zinc-400 mb-1">商品品名 <span class="text-red-400">*</span></label>
                 <input type="text" id="inputName" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white">
             </div>
+            
+            <!-- [新增] 商品分類 -->
+            <div>
+                <label class="block text-zinc-400 mb-1">商品分類 <span class="text-red-400">*</span></label>
+                <select id="inputCategory" required class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-white focus:outline-none focus:border-brandYellow cursor-pointer">
+                    <option value="">請選擇分類...</option>
+                    <!-- 這裡的選項會由 JavaScript (loadCategories) 動態寫入 -->
+                </select>
+            </div>
+
             <div>
                 <label class="block text-zinc-400 mb-1">商品圖片 (選填)</label>
                 <input type="file" id="inputImage" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-1.5 text-zinc-400">
             </div>
+            
+            <!-- 下方維持原本的 HTML -->
             <div class="grid grid-cols-2 gap-3">
                 <div class="w-full">
                     <label class="block text-zinc-400 mb-1">預計發售年月 <span class="text-red-400">*</span></label>
@@ -424,28 +436,38 @@
             document.getElementById('loginModal').classList.remove('hidden');
         }
 
-        // 從後端 API 獲取分類並渲染到下拉選單
+// 從後端 API 獲取分類，並同時渲染到「搜尋列」與「表單彈窗」中
 async function loadCategories() {
     try {
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${API_BASE_URL}/api/categories`);
         if (!response.ok) throw new Error('網路回應錯誤');
         
         const categories = await response.json();
-        const categorySelect = document.getElementById('categorySelect');
+        
+        // 抓取兩個選單的 DOM
+        const searchSelect = document.getElementById('categorySelect'); // 搜尋列
+        const inputSelect = document.getElementById('inputCategory');   // 彈窗表單
 
-        // 將抓回來的分類資料轉為 <option> 並加到選單中
         categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;       // 設定 value 為分類的 id
-            option.textContent = category.name; // 設定顯示的文字為分類名稱
-            categorySelect.appendChild(option);
+            // 生成 Option 的 HTML
+            const optionHTML = `<option value="${category.id}">${category.name}</option>`;
+            
+            // 如果搜尋列存在，塞入選項
+            if (searchSelect) {
+                searchSelect.insertAdjacentHTML('beforeend', optionHTML);
+            }
+            
+            // 如果表單存在，塞入選項
+            if (inputSelect) {
+                inputSelect.insertAdjacentHTML('beforeend', optionHTML);
+            }
         });
 
     } catch (error) {
         console.error('載入分類失敗:', error);
     }
 }
-
+        
 // 確保網頁 DOM 元素都載入完成後，執行獲取分類的動作
 document.addEventListener('DOMContentLoaded', () => {
     loadCategories();
@@ -557,6 +579,8 @@ function selectMonthTab(ym) {
 async function loadProducts() {
     const keywordInput = document.getElementById('searchKeyword');
     const keyword = keywordInput ? keywordInput.value.trim() : '';
+    const categorySelect = document.getElementById('categorySelect');
+    const categoryId = categorySelect ? categorySelect.value : ''; // 抓取選擇的分類 ID
     
     const grid = document.getElementById('productsGrid');
     if (grid) {
@@ -564,7 +588,8 @@ async function loadProducts() {
     }
 
     try {
-        const fetchUrl = `${API_BASE_URL}/api/products?year_month=${encodeURIComponent(currentSelectedYM)}&keyword=${encodeURIComponent(keyword)}`;
+        // [新增] 將 category_id 加到 query string 裡
+        const fetchUrl = `${API_BASE_URL}/api/products?year_month=${encodeURIComponent(currentSelectedYM)}&keyword=${encodeURIComponent(keyword)}&category_id=${encodeURIComponent(categoryId)}`;
         const res = await fetch(fetchUrl);
         const result = await res.json();
         
@@ -612,7 +637,6 @@ async function loadProducts() {
         }
     }
 }
-
 
         
 // 記錄當前選中的子分頁狀態（預設為交易中）
@@ -956,6 +980,13 @@ async function openEditModal(productId) {
 
                 // 填入真正的商品名稱與資料
                 document.getElementById('modalTitle').innerText = '編輯商品：' + product.name;
+                
+                // [新增] 填入分類 (假設你在 HTML 設定的下拉選單 ID 為 inputCategory)
+                const categoryInput = document.getElementById('inputCategory');
+                if (categoryInput) {
+                    categoryInput.value = product.category_id || '';
+                }
+
                 document.getElementById('inputName').value = product.name;
                 document.getElementById('inputYM').value = product.year_month;
                 document.getElementById('inputQuota').value = product.quota;
@@ -1000,9 +1031,13 @@ function closeProductModal() {
     }
 }
 
-// 4. 儲存商品設定（自動判斷是「新增」還是「編輯更新」，並帶有 Loading 遮罩與防連點保護）
+// 4. 儲存商品設定
 async function saveProduct() {
     if (window.isSubmitting) return; // 防止重複點擊觸發
+
+    // [新增] 抓取選擇的分類 ID
+    const categoryInput = document.getElementById('inputCategory');
+    const category_id = categoryInput ? categoryInput.value : '';
 
     const name = document.getElementById('inputName').value;
     const year_month = document.getElementById('inputYM').value;
@@ -1037,13 +1072,14 @@ async function saveProduct() {
     };
 
     try {
-        // 圖片處理防護：如果沒有重新選擇新檔案，直接沿用原本資料庫的圖片，避免被空白洗掉
+        // 圖片處理防護
         let image_url = typeof currentImageUrl !== 'undefined' ? currentImageUrl : '';
         if (file) {
             image_url = await convertToBase64(file);
         }
 
         const productData = {
+            category_id, // [新增] 將分類 ID 包進送出的資料中
             name,
             image_url, 
             year_month,

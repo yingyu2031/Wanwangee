@@ -1157,7 +1157,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染預購人明細表格內容                       
+// 2. 渲染預購人明細表格內容            
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1167,6 +1167,15 @@ function renderAllocationTable() {
         return;
     }
 
+    // 🔥 核心防呆：在渲染第一步，先將記憶體中所有「成交」的訂單強制設為已分派 (true)
+    // 這樣下面所有判斷與數量加總，絕對完美一致，不會漏算。
+    currentOrdersData.forEach(order => {
+        if (order.status === '成交') {
+            order.is_allocated = true;
+        }
+    });
+
+    // 這裡的 reduce 會自動把上面強制設為 true 的成交訂單也算進去
     const totalQty = currentOrdersData.reduce((sum, order) => sum + (Number(order.quantity) || 0), 0);
 
     content.innerHTML = `
@@ -1187,13 +1196,14 @@ function renderAllocationTable() {
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         
-                        // 直接使用 status === '成交' 
                         const isCompleted = (order.status === '成交');
                         
-                        // 只要狀態是成交，或資料庫本身是 is_allocated，就打勾
-                        const isChecked = (isCompleted || order.is_allocated) ? 'checked' : '';
+                        // 因為最上面已經統一資料，這裡只要直接讀取 is_allocated 打勾即可
+                        const isChecked = order.is_allocated ? 'checked="checked"' : '';
                         
-                        const disabledAttr = isCompleted ? 'disabled' : '';
+                        // 💡 視覺與鎖定關鍵修正：
+                        // 放棄原生 disabled (因為會吃掉勾勾)，改用 pointer-events-none 實體鎖住滑鼠點擊
+                        const pointerLockClass = isCompleted ? 'pointer-events-none' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
                         let statusBadge = '<span class="text-zinc-500">-</span>';
@@ -1205,15 +1215,16 @@ function renderAllocationTable() {
                             statusBadge = '<span class="text-red-400 font-bold">取消</span>';
                         }
 
+                        // 加入 onclick="return false;" tabindex="-1" 徹底防止鍵盤/滑鼠去變更成交狀態
                         return `
                             <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition ${rowOpacityClass}">
                                 <td class="p-2 text-center">
                                     <input 
                                         type="checkbox" 
-                                        class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}"
+                                        class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'} ${pointerLockClass}"
                                         data-index="${index}"
                                         value="1"
-                                        ${isChecked}${disabledAttr}
+                                        ${isChecked}${isCompleted ? 'onclick="return false;" tabindex="-1"' : ''}
                                         onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>
@@ -1274,6 +1285,7 @@ function handleCheckboxChange(index) {
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
+    // 數量計算完美：因為 render 第一步已經把成交設為 true，這裡直接 filter 絕對精準
     const allocatedQty = currentOrdersData
         .filter(o => o.is_allocated)
         .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
@@ -1293,13 +1305,13 @@ function updateAllocationStatus() {
     checkboxes.forEach((cb, index) => {
         const order = currentOrdersData[index];
         
-        // 成交狀態保持鎖定與反灰
+        // 如果是成交狀態，維持打勾並直接跳過 (它在 HTML 已經被我們用 pointer-events-none 鎖死了)
         if (order.status === '成交') {
-            cb.disabled = true;
-            cb.closest('tr').classList.add('opacity-40');
+            cb.checked = true; 
             return;
         }
 
+        // 一般「交易中」訂單的達量防呆鎖定 (這裡超額變空白時，用原生 disabled 沒問題)
         const itemQty = Number(order.quantity) || 0;
         if (!order.is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;
@@ -1310,7 +1322,7 @@ function updateAllocationStatus() {
         }
     });
 }
-
+        
 // 5. 儲存分派結果至後端
 async function saveProductAllocation() {
     if (!currentProductId) return;

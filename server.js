@@ -448,45 +448,65 @@ app.get('/api/admin/orders', async (req, res) => {
     }
 });
 
-// 更新出貨、收款日期
-app.patch('/api/orders/:id/status', async (req, res) => {
+
+// 1.更新出貨或收款狀態 API（若兩者皆完成，自動將 status 改為 '成交'）
+app.patch('/api/admin/orders/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
-        const { type, status, date } = req.json || req.body; 
-        // type 可以是 'shipping' 或 'payment'
+        const { type, status, date } = req.body; // type: 'shipping' 或 'payment'
 
-        let query = '';
-        let params = [];
+        let updateField = '';
+        let dateField = '';
 
         if (type === 'shipping') {
-            query = `UPDATE orders SET shipping_status = $1, shipping_date = $2 WHERE id = $3 RETURNING *`;
-            params = [status, date || new Date(), id];
+            updateField = 'shipping_status';
+            dateField = 'shipping_date';
         } else if (type === 'payment') {
-            query = `UPDATE orders SET payment_status = $1, payment_date = $2 WHERE id = $3 RETURNING *`;
-            params = [status, date || new Date(), id];
+            updateField = 'payment_status';
+            dateField = 'payment_date';
         } else {
             return res.status(400).json({ success: false, message: '無效的更新類型' });
         }
 
-        const result = await pool.query(query, params);
+        // 先執行更新該欄位
+        const query = `
+            UPDATE orders 
+            SET ${updateField} = $1, ${dateField} = $2 
+            WHERE id = $3 
+            RETURNING *;
+        `;
+        const result = await pool.query(query, [status, date || new Date(), id]);
+
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: '找不到該訂單' });
         }
 
-        res.json({ success: true, data: result.rows[0] });
+        let updatedOrder = result.rows[0];
+
+        // 檢查是否已同時「已寄出」與「已收款」，若是則自動把 status 改成 '成交'
+        if (
+            (updatedOrder.shipping_status === '已寄出' || updatedOrder.shipping_status === 'shipped') &&
+            (updatedOrder.payment_status === '已收款' || updatedOrder.payment_status === 'paid')
+        ) {
+            const statusQuery = `UPDATE orders SET status = '成交' WHERE id = $1 RETURNING *;`;
+            const statusResult = await pool.query(statusQuery, [id]);
+            updatedOrder = statusResult.rows[0];
+        }
+
+        res.json({ success: true, data: updatedOrder });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });
 
-// 更新訂單備註
-app.patch('/api/orders/:id/memo', async (req, res) => {
+// 2. 更新訂單備註 API
+app.patch('/api/admin/orders/:id/memo', async (req, res) => {
     try {
         const { id } = req.params;
         const { memo } = req.body;
 
-        const query = `UPDATE orders SET memo = $1 WHERE id = $2 RETURNING *`;
+        const query = `UPDATE orders SET memo = $1 WHERE id = $2 RETURNING *;`;
         const result = await pool.query(query, [memo, id]);
 
         if (result.rows.length === 0) {
@@ -499,6 +519,8 @@ app.patch('/api/orders/:id/memo', async (req, res) => {
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });
+
+
 
 
 app.listen(PORT, () => {

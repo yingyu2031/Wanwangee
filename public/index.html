@@ -136,7 +136,7 @@
             
             <!-- 狀態子分頁（書籤式活頁標籤：貼齊頂部並往上浮動） -->
             <div class="flex items-end space-x-1 px-4 scrollbar-none relative z-10 overflow-x-auto">
-                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-5 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
                     交易中 (4)
                 </button>
                 <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
@@ -427,17 +427,27 @@
             if (tab === 'fulfillment') loadOrders(currentOrderStatus);
             if (tab === 'members') loadMembers();
         }
+        
+ function switchSubTab(status) {
+    const tabs = [
+        { id: 'subTabTrading', name: '交易中' },
+        { id: 'subTabCompleted', name: '成交' },
+        { id: 'subTabCancelled', name: '取消' }
+    ];
 
-        function switchSubTab(subTab) {
-            currentOrderStatus = subTab;
-            ['trading', 'completed', 'cancelled'].forEach(t => {
-                const btn = document.getElementById('subTab' + t.charAt(0).toUpperCase() + t.slice(1));
-                if (btn) btn.className = "bg-zinc-800 text-zinc-300 hover:text-white px-4 py-2.5 rounded-t-xl transition";
-            });
-            const activeBtn = document.getElementById('subTab' + subTab.charAt(0).toUpperCase() + subTab.slice(1));
-            if (activeBtn) activeBtn.className = "bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition font-bold shadow";
-            loadOrders(subTab);
+    tabs.forEach(tab => {
+        const btn = document.getElementById(tab.id);
+        if (!btn) return;
+
+        if (tab.name === status) {
+            btn.className = "bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs";
+        } else {
+            btn.className = "bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs";
         }
+    });
+
+    loadOrders(status);
+}
 
 // 動態取得系統當前年月 (格式為 YYYY-MM，例如 2026-10)
 function getCurrentYearMonth() {

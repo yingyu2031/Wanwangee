@@ -1148,7 +1148,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染表格內容（已修復屬性間距與成交反灰鎖定）             
+// 2. 渲染預購人明細表格內容 
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1178,11 +1178,11 @@ function renderAllocationTable() {
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         
-                        // 關鍵修正 1：如果狀態是「成交」，強制預設為勾選狀態 (checked)，不管資料庫的 is_allocated 是什麼
-                        const isCompleted = (order.status === '成交');
-                        const isChecked = (isCompleted || order.is_allocated) ? 'checked' : '';
+                        // 忠實依據資料庫的 is_allocated 決定是否打勾
+                        const isChecked = order.is_allocated ? 'checked' : '';
                         
-                        // 關鍵修正 2：成交狀態強制鎖定 (disabled) 並反灰
+                        // 判斷是否為成交狀態（成交狀態需要反灰並鎖定）
+                        const isCompleted = (order.status === '成交');
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
@@ -1224,16 +1224,9 @@ function renderAllocationTable() {
         </div>
     `;
 
-    // 同步把記憶體中成交項目的 is_allocated 設為 true，確保計算數量正確
-    currentOrdersData.forEach(order => {
-        if (order.status === '成交') {
-            order.is_allocated = true;
-        }
-    });
-
     updateAllocationStatus();
 }
-
+        
 // 3. 當勾選框變動時的防呆控制與計算
 function handleCheckboxChange(index) {
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
@@ -1242,28 +1235,22 @@ function handleCheckboxChange(index) {
     const targetOrder = currentOrdersData[index];
     const isNowChecked = checkboxes[index].checked;
 
-    // 檢查：如果原本是勾選的，現在要「拿掉勾選」（is_allocated 變為 false）
     if (targetOrder.is_allocated && !isNowChecked) {
-        // 如果原本狀態是「交易中」，跳出提示窗確認
         if (targetOrder.status === '交易中') {
             const confirmed = confirm(`此訂單目前狀態為「交易中」，確定要拿掉分派嗎？`);
             if (!confirmed) {
-                // 使用者按取消，強制恢復勾選狀態
                 checkboxes[index].checked = true;
                 return;
             }
         }
     }
 
-    // 更新記憶體中的狀態
     targetOrder.is_allocated = isNowChecked;
 
-    // 計算目前已勾選的「總數量」
     const allocatedQty = currentOrdersData
         .filter(o => o.is_allocated)
         .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
 
-    // 防呆：如果勾選後的總數量超過實際到貨量，強制取消並提示
     if (allocatedQty > actualStock) {
         checkboxes[index].checked = false;
         targetOrder.is_allocated = false;
@@ -1277,7 +1264,6 @@ function handleCheckboxChange(index) {
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
-    // 計算目前已勾選的總數量
     const allocatedQty = currentOrdersData
         .filter(o => o.is_allocated)
         .reduce((sum, o) => sum + (Number(o.quantity) || 0), 0);
@@ -1285,7 +1271,6 @@ function updateAllocationStatus() {
     const statusText = document.getElementById('allocationStatusText');
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
 
-    // 顯示狀態改為數量統計
     statusText.innerText = `已勾選分派數量：${allocatedQty} / ${actualStock}`;
     if (allocatedQty > actualStock) {
         statusText.classList.add('text-red-400');
@@ -1295,11 +1280,16 @@ function updateAllocationStatus() {
         statusText.classList.add('text-zinc-300');
     }
 
-    // 當剩餘到貨量不足以負荷該筆項目的數量時，自動將未勾選的項目轉為 disabled (成交狀態維持鎖定)
     checkboxes.forEach((cb, index) => {
         const order = currentOrdersData[index];
-        if (order.status === '成交') return; // 成交狀態保持不動
-
+        
+        // 成交狀態強制保持鎖定與反灰
+        if (order.status === '成交') {
+            cb.disabled = true;
+            cb.closest('tr').classList.add('opacity-40');
+            return;
+        }
+        // 達量不可選
         const itemQty = Number(order.quantity) || 0;
         if (!order.is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;
@@ -1328,9 +1318,7 @@ async function saveProductAllocation() {
     try {
         const res = await fetch(`${API_BASE_URL}/api/products/${currentProductId}/allocate`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
 
@@ -1338,7 +1326,7 @@ async function saveProductAllocation() {
         if (result.success) {
             alert('到貨分派儲存成功！');
             closeDetailModal();
-            loadProducts(); // 重新整理商品列表數據
+            loadProducts();
         } else {
             alert(`儲存失敗：${result.message || '未知錯誤'}`);
         }
@@ -1356,7 +1344,6 @@ function closeDetailModal() {
         modal.classList.add('hidden');
     }
 }
-
 
         
         function promptDate(badgeId, textPrefix) {

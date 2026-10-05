@@ -1149,6 +1149,7 @@ async function openDetailModal(productId, productName) {
 }
 
 // 2. 渲染預購人明細表格內容     
+// 2. 渲染表格內容（成交與已分派訂單打勾，成交狀態反灰鎖定）        
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1181,10 +1182,10 @@ function renderAllocationTable() {
                         // 判斷是否為成交狀態
                         const isCompleted = (order.status === '成交');
                         
-                        // 勾選判斷：只要資料庫 is_allocated 為 true，或是狀態為「成交」，開啟時就要打勾
+                        // 關鍵修正：只要資料庫 is_allocated 為 true，或是狀態為「成交」，開啟時就要強制打勾
                         const isChecked = (order.is_allocated || isCompleted) ? 'checked' : '';
                         
-                        // 鎖定與反灰判斷：只有「成交」狀態需要被強制鎖定與反灰
+                        // 鎖定與反灰判斷：「成交」狀態需要被強制鎖定與反灰
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
@@ -1206,7 +1207,7 @@ function renderAllocationTable() {
                                         data-index="${index}"
                                         value="1"
                                         ${isChecked}${disabledAttr}
-                                        onchange="handleCheckboxChange(${index})"
+                                        onchange="handleCheckboxCheck(${index})"
                                     />
                                 </td>
                                 <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>

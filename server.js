@@ -416,9 +416,6 @@ app.post('/api/products/:id/allocate', async (req, res) => {
                         [item.order_no]
                     );
                 } else {
-                    // 取消勾選時：is_allocated 設為 false
-                    // 如果原本狀態是「交易中」，拿掉勾選後變回空值 (NULL)
-                    // 如果原本是「取消」狀態，拿掉勾選則維持「取消」
                     await pool.query(
                         `UPDATE orders 
                          SET is_allocated = FALSE, status = CASE WHEN status = '交易中' THEN NULL ELSE status END 
@@ -434,7 +431,6 @@ app.post('/api/products/:id/allocate', async (req, res) => {
         console.error(err);
         res.status(500).json({ success: false, message: '資料庫更新失敗' });
     }
-});
 });
 
 // 到貨與出貨對帳名單明細api

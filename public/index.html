@@ -683,28 +683,6 @@ function updateTradingTabCount(ordersList) {
     }
 }
         
-// 客戶取消
-async function cancelAndReassign(orderId, customerName) {
-    if (!confirm(`確定要取消 [${customerName}] 的訂單並進行改派嗎？`)) return;
-
-    try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/cancel`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' }
-        });
-        const result = await res.json();
-
-        if (result.success) {
-            alert(`已成功將 [${customerName}] 的訂單狀態改為取消！`);
-            loadOrders(currentStatus || '交易中'); // 重新載入列表
-        } else {
-            alert('操作失敗: ' + result.message);
-        }
-    } catch (err) {
-        console.error('取消訂單發生錯誤:', err);
-        alert('網路連線或伺服器錯誤');
-    }
-}
         
 // 5. 載入訂單 API (含載入中與 MM-DD 日期格式化)
 let cachedOrdersData = [];

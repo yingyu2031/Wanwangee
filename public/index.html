@@ -109,9 +109,8 @@
     <div class="flex items-end space-x-1 overflow-x-auto px-2 pt-2 scrollbar-none" id="monthTabsContainer">
         <!-- 透過 JS 動態生成書籤式月份按鈕（建議生成時帶有 rounded-t-xl 且未選中時帶有背景沈穩感） -->
     </div>
-
     <!-- 3. 內頁主容器（包覆上架按鈕與商品網格，與上方頁籤完美無縫接合） -->
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-1">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-3">
         
         <!-- 上架新商品按鈕 -->
         <button onclick="openProductModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-3 rounded-xl transition shadow-md whitespace-nowrap text-center flex items-center justify-center space-x-1">
@@ -126,16 +125,16 @@
 </div>
 
         <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
-     <div id="fulfillmentSection" class="space-y-4 hidden">
+    <div id="fulfillmentSection" class="space-y-4 hidden">
     <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->
     <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
 
-        <!-- 1. 上方工具與子分頁列（結合搜尋與書籤頁籤） -->
+        <!-- 1. 上方工具與子分頁列 -->
         <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-4 shadow-xl">
             <!-- 搜尋框 -->
             <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
 
-            <!-- 狀態子分頁（改為與上方無縫接合的書籤式頁籤） -->
+            <!-- 狀態子分頁 -->
             <div class="flex items-end space-x-1 border-b border-zinc-800 px-2 pt-2 text-xs font-bold overflow-x-auto">
                 <button onclick="switchSubTab('trading')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500">交易中 (4)</button>
                 <button onclick="switchSubTab('completed')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">成交 (0)</button>
@@ -143,7 +142,7 @@
             </div>
         </div>
 
-        <!-- 2. 主內頁容器（包含批次通知按鈕與訂單表格，與上方頁籤完美無縫接合） -->
+        <!-- 2. 主內頁容器 -->
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-1">
             
             <!-- 批次群發 LINE 通知按鈕 -->
@@ -167,28 +166,10 @@
                                 <th class="p-3 text-right">操作</th>
                             </tr>
                         </thead>
+                        <!-- 移除寫死的 tr，完全交由 JavaScript 的 loadOrders 動態渲染 -->
                         <tbody id="ordersTableBody" class="divide-y divide-zinc-800 text-zinc-300">
                             <tr>
-                                <td class="p-3 sticky-col-1 font-bold text-white">玩家小傑 <span class="text-[10px] text-zinc-500 block">(@jack_toy)</span></td>
-                                <td class="p-3 font-medium">RX-93ff v GUNDAM</td>
-                                <td class="p-3 text-center font-bold text-brandYellow">1</td>
-                                <td class="p-3">
-                                    <div class="flex items-center space-x-2">
-                                        <span id="shipBadge1" class="text-red-400 font-bold text-[11px]">未寄出</span>
-                                        <button onclick="promptDate('shipBadge1', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
-                                    </div>
-                                </td>
-                                <td class="p-3">
-                                    <div class="flex items-center space-x-2">
-                                        <span id="payBadge1" class="text-red-400 font-bold text-[11px]">未收款</span>
-                                        <button onclick="promptDate('payBadge1', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
-                                    </div>
-                                </td>
-                                <td class="p-3 text-zinc-400 font-mono text-[11px]">
-                                    10-02 10:00 <button onclick="resendNotification('玩家小傑')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">通知</button>
-                                </td>
-                                <td class="p-3"><input type="text" placeholder="輸入備註..." class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32"></td>
-                                <td class="p-3 text-right"><button onclick="cancelAndReassign('玩家小傑')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">客人取消(改派)</button></td>
+                                <td colspan="8" class="p-6 text-center text-zinc-500">資料載入中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -594,45 +575,71 @@ async function loadProducts() {
 
 
         // 載入訂單 API
-        async function loadOrders(status) {
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/admin/orders?status=${status}`);
-                const result = await res.json();
-                const tbody = document.getElementById('ordersTableBody');
+     async function loadOrders(status) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders?status=${status}`);
+        const result = await res.json();
+        const tbody = document.getElementById('ordersTableBody');
         
-                if (result.success && result.data.length > 0) {
-                    tbody.innerHTML = result.data.map(o => `
-                        <tr>
-                            <td class="p-3 sticky-col-1 font-bold text-white">${o.real_name || '未填寫'} <span class="text-[10px] text-zinc-500 block">(${o.line_nickname})</span></td>
-                            <td class="p-3 font-medium">${o.product_name}</td>
-                            <td class="p-3 text-center font-bold text-brandYellow">${o.quantity}</td>
-                            <td class="p-3">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-red-400 font-bold text-[11px]">${o.shipping_status}</span>
-                                    <button onclick="promptDate('shipBadge1', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
-                                </div>
-                            </td>
-                            <td class="p-3">
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-red-400 font-bold text-[11px]">${o.payment_status}</span>
-                                    <button onclick="promptDate('payBadge1', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
-                                </div>
-                            </td>
-                            <td class="p-3 text-zinc-400 font-mono text-[11px]">
-                                - <button onclick="resendNotification('${o.real_name || '買家'}')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">通知</button>
-                            </td>
-                            <td class="p-3"><input type="text" value="${o.memo || ''}" placeholder="輸入備註..." class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32"></td>
-                            <td class="p-3 text-right"><button onclick="cancelAndReassign('${o.real_name || '買家'}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">客人取消(改派)</button></td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-zinc-500">目前沒有相關訂單紀錄</td></tr>';
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        }
+        if (result.success && result.data && result.data.length > 0) {
+            tbody.innerHTML = result.data.map((o, index) => {
+                const id = o.id || (index + 1);
+                const buyerDisplayName = o.real_name || '未填寫';
+                const lineNick = o.line_nickname || '未知';
+                
+                // 判斷狀態文字來決定顏色標籤
+                const isShipped = o.shipping_status === '已寄出';
+                const isPaid = o.payment_status === '已收款';
 
+                return `
+                    <tr>
+                        <td class="p-3 sticky-col-1 font-bold text-white">
+                            ${buyerDisplayName} 
+                            <span class="text-[10px] text-zinc-500 block">(${lineNick})</span>
+                        </td>
+                        <td class="p-3 font-medium">${o.product_name || '未命名商品'}</td>
+                        <td class="p-3 text-center font-bold text-brandYellow">${o.quantity || 1}</td>
+                        <td class="p-3">
+                            <div class="flex items-center space-x-2">
+                                <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
+                                    ${o.shipping_status || '未寄出'}
+                                </span>
+                                <button onclick="promptDate('shipBadge${id}', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
+                            </div>
+                        </td>
+                        <td class="p-3">
+                            <div class="flex items-center space-x-2">
+                                <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
+                                    ${o.payment_status || '未收款'}
+                                </span>
+                                <button onclick="promptDate('payBadge${id}', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
+                            </div>
+                        </td>
+                        <td class="p-3 text-zinc-400 font-mono text-[11px]">
+                            ${o.last_notify_time ? o.last_notify_time : '-'} 
+                            <button onclick="resendNotification('${buyerDisplayName}')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">通知</button>
+                        </td>
+                        <td class="p-3">
+                            <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="cancelAndReassign('${buyerDisplayName}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">客人取消(改派)</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-zinc-500">目前沒有相關訂單紀錄</td></tr>';
+        }
+    } catch (err) {
+        console.error('載入訂單失敗:', err);
+        const tbody = document.getElementById('ordersTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-red-400">載入資料發生錯誤</td></tr>';
+        }
+    }
+}
+        
         // 載入會員名單 API
         async function loadMembers() {
             try {

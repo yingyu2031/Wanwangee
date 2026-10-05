@@ -1148,7 +1148,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染預購人明細表格內容 
+// 2. 渲染預購人明細表格內容     
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1178,11 +1178,13 @@ function renderAllocationTable() {
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         
-                        // 忠實依據資料庫的 is_allocated 決定是否打勾
-                        const isChecked = order.is_allocated ? 'checked' : '';
-                        
-                        // 判斷是否為成交狀態（成交狀態需要反灰並鎖定）
+                        // 判斷是否為成交狀態
                         const isCompleted = (order.status === '成交');
+                        
+                        // 勾選判斷：只要資料庫 is_allocated 為 true，或是狀態為「成交」，開啟時就要打勾
+                        const isChecked = (order.is_allocated || isCompleted) ? 'checked' : '';
+                        
+                        // 鎖定與反灰判斷：只有「成交」狀態需要被強制鎖定與反灰
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
@@ -1223,6 +1225,13 @@ function renderAllocationTable() {
             </div>
         </div>
     `;
+
+    // 同步把記憶體中成交項目的 is_allocated 設為 true，確保計算數量時不會漏掉
+    currentOrdersData.forEach(order => {
+        if (order.status === '成交') {
+            order.is_allocated = true;
+        }
+    });
 
     updateAllocationStatus();
 }

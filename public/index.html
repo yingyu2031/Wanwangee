@@ -1106,6 +1106,7 @@ async function deleteProduct() {
 let currentProductId = null;
 let currentOrdersData = [];
 
+
 // 1. 開啟預購人明細與到貨分派彈窗
 async function openDetailModal(productId, productName) {
     currentProductId = productId;
@@ -1138,6 +1139,14 @@ async function openDetailModal(productId, productName) {
 
         if (ordersResult.success) {
             currentOrdersData = ordersResult.data || [];
+            
+            // 💡 關鍵修復：在資料載入的第一時間，強制將所有狀態為「成交」的訂單標記為已分派 (is_allocated = true)
+            currentOrdersData.forEach(order => {
+                if (order.status === '成交') {
+                    order.is_allocated = true;
+                }
+            });
+
             renderAllocationTable();
         } else {
             content.innerHTML = '<p class="text-center text-red-400 py-6">載入明細失敗</p>';
@@ -1178,13 +1187,8 @@ function renderAllocationTable() {
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         
-                        // 判斷是否為成交狀態
                         const isCompleted = (order.status === '成交');
-                        
-                        // 關鍵修正：只要資料庫 is_allocated 為 true，或是狀態為「成交」，開啟時就要強制打勾
-                        const isChecked = (order.is_allocated || isCompleted) ? 'checked' : '';
-                        
-                        // 鎖定與反灰判斷：「成交」狀態需要被強制鎖定與反灰
+                        const isChecked = order.is_allocated ? 'checked' : '';
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 
@@ -1206,7 +1210,7 @@ function renderAllocationTable() {
                                         data-index="${index}"
                                         value="1"
                                         ${isChecked}${disabledAttr}
-                                        onchange="handleCheckboxCheck(${index})"
+                                        onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>
                                 <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
@@ -1225,13 +1229,6 @@ function renderAllocationTable() {
             </div>
         </div>
     `;
-
-    // 同步把記憶體中成交項目的 is_allocated 設為 true，確保計算數量時不會漏掉
-    currentOrdersData.forEach(order => {
-        if (order.status === '成交') {
-            order.is_allocated = true;
-        }
-    });
 
     updateAllocationStatus();
 }
@@ -1270,7 +1267,6 @@ function handleCheckboxChange(index) {
 }
 
 // 4. 更新畫面上狀態文字與控管 Checkbox 是否能點選
-// 4. 更新畫面上狀態文字與控管 Checkbox 是否能點選
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
@@ -1293,16 +1289,13 @@ function updateAllocationStatus() {
     checkboxes.forEach((cb, index) => {
         const order = currentOrdersData[index];
         
-        // 💡 關鍵修復：成交狀態不僅要鎖定與反灰，還要強制確保它是打勾的！
+        // 成交狀態保持鎖定與反灰
         if (order.status === '成交') {
-            cb.checked = true;           // 強制勾選
-            order.is_allocated = true;   // 同步記憶體狀態
-            cb.disabled = true;          // 鎖定不可點
-            cb.closest('tr').classList.add('opacity-40'); // 反灰
+            cb.disabled = true;
+            cb.closest('tr').classList.add('opacity-40');
             return;
         }
 
-        // 一般交易中訂單的達量不可選控管
         const itemQty = Number(order.quantity) || 0;
         if (!order.is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;

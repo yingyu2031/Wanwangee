@@ -449,7 +449,7 @@ app.get('/api/admin/orders', async (req, res) => {
 });
 
 
-// 1.更新出貨或收款狀態 API（若兩者皆完成，自動將 status 改為 '成交'）
+// 更新出貨或收款狀態
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
@@ -468,14 +468,14 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
             return res.status(400).json({ success: false, message: '無效的更新類型' });
         }
 
-        // 先執行更新該欄位
+        // 1. 更新指定欄位與日期 (若 date 為空則清空日期)
         const query = `
             UPDATE orders 
             SET ${updateField} = $1, ${dateField} = $2 
             WHERE id = $3 
             RETURNING *;
         `;
-        const result = await pool.query(query, [status, date || new Date(), id]);
+        const result = await pool.query(query, [status, date || null, id]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: '找不到該訂單' });
@@ -483,15 +483,19 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
 
         let updatedOrder = result.rows[0];
 
-        // 檢查是否已同時「已寄出」與「已收款」，若是則自動把 status 改成 '成交'
-        if (
-            (updatedOrder.shipping_status === '已寄出' || updatedOrder.shipping_status === 'shipped') &&
-            (updatedOrder.payment_status === '已收款' || updatedOrder.payment_status === 'paid')
-        ) {
-            const statusQuery = `UPDATE orders SET status = '成交' WHERE id = $1 RETURNING *;`;
-            const statusResult = await pool.query(statusQuery, [id]);
-            updatedOrder = statusResult.rows[0];
+        // 2. 檢查狀態決定總 status 是「成交」還是「交易中」
+        const isShipped = (updatedOrder.shipping_status === '已寄出' || updatedOrder.shipping_status === 'shipped');
+        const isPaid = (updatedOrder.payment_status === '已收款' || updatedOrder.payment_status === 'paid');
+
+        let newOverallStatus = '交易中';
+        if (isShipped && isPaid) {
+            newOverallStatus = '成交';
         }
+
+        // 3. 回寫總 status
+        const statusQuery = `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *;`;
+        const statusResult = await pool.query(statusQuery, [newOverallStatus, id]);
+        updatedOrder = statusResult.rows[0];
 
         res.json({ success: true, data: updatedOrder });
     } catch (err) {

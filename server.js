@@ -433,7 +433,7 @@ app.post('/api/products/:id/allocate', async (req, res) => {
     }
 });
 
-// 到貨與出貨對帳名單明細api
+// 到貨與出貨對帳名單明細 api
 app.get('/api/admin/orders', async (req, res) => {
     try {
         const { status = '交易中', keyword = '' } = req.query;
@@ -448,6 +448,8 @@ app.get('/api/admin/orders', async (req, res) => {
             JOIN users u ON o.uid = u.uid
             JOIN products p ON o.product_id = p.id
             WHERE o.status = $1 
+              AND o.status IS NOT NULL 
+              AND o.status != ''
               AND o.is_allocated = TRUE
         `;
         let params = [status];
@@ -462,7 +464,7 @@ app.get('/api/admin/orders', async (req, res) => {
         const result = await pool.query(query, params);
         res.json({ success: true, data: result.rows });
     } catch (err) {
-        console.error(err);
+        console.error('取得對帳名單錯誤:', err);
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });

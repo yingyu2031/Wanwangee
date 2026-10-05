@@ -1178,7 +1178,11 @@ function renderAllocationTable() {
                         const realName = order.real_name || '*';
                         const isChecked = order.is_allocated ? 'checked' : '';
                         
-                        // 根據真實的 status 決定顏色與文字：交易中=黃字，成交=綠字，取消=紅字，空白=-
+                        // 判斷是否為成交狀態（成交不允許取消勾選，需反灰）
+                        const isCompleted = (order.status === '成交');
+                        const disabledAttr = isCompleted ? 'disabled' : '';
+                        const rowOpacityClass = isCompleted ? 'opacity-40' : '';
+
                         let statusBadge = '<span class="text-zinc-500">-</span>';
                         if (order.status === '交易中') {
                             statusBadge = '<span class="text-brandYellow font-bold">交易中</span>';
@@ -1189,13 +1193,13 @@ function renderAllocationTable() {
                         }
 
                         return `
-                            <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition">
+                            <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition ${rowOpacityClass}">
                                 <td class="p-2 text-center">
                                     <input 
                                         type="checkbox" 
-                                        class="allocation-checkbox w-4 h-4 accent-brandYellow rounded cursor-pointer"
+                                        class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}"
                                         data-index="${index}"
-                                        ${isChecked}
+                                        ${isChecked}${disabledAttr}
                                         onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>
@@ -1218,14 +1222,30 @@ function renderAllocationTable() {
 
     updateAllocationStatus();
 }
-
+        
 // 當勾選框變動時的防呆控制與計算（改為計算數量總和）
 function handleCheckboxChange(index) {
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
+    const targetOrder = currentOrdersData[index];
+    const isNowChecked = checkboxes[index].checked;
+
+    // 檢查：如果原本是勾選的，現在要「拿掉勾選」（is_allocated 變為 false）
+    if (targetOrder.is_allocated && !isNowChecked) {
+        // 如果原本狀態是「交易中」，跳出提示窗確認
+        if (targetOrder.status === '交易中') {
+            const confirmed = confirm(`此訂單目前狀態為「交易中」，確定要拿掉分派嗎？`);
+            if (!confirmed) {
+                // 使用者按取消，強制恢復勾選狀態
+                checkboxes[index].checked = true;
+                return;
+            }
+        }
+    }
+
     // 更新記憶體中的狀態
-    currentOrdersData[index].is_allocated = checkboxes[index].checked;
+    targetOrder.is_allocated = isNowChecked;
 
     // 計算目前已勾選的「總數量」
     const allocatedQty = currentOrdersData
@@ -1235,13 +1255,12 @@ function handleCheckboxChange(index) {
     // 防呆：如果勾選後的總數量超過實際到貨量，強制取消並提示
     if (allocatedQty > actualStock) {
         checkboxes[index].checked = false;
-        currentOrdersData[index].is_allocated = false;
+        targetOrder.is_allocated = false;
         alert(`已勾選的總數量 (${allocatedQty}) 已超過實際到貨量 (${actualStock})！`);
     }
 
     updateAllocationStatus();
 }
-
 // 更新畫面上狀態文字與控管 Checkbox 是否能點選
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;

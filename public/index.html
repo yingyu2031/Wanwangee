@@ -140,13 +140,13 @@
             
             <!-- 狀態子分頁（書籤式活頁標籤） -->
             <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10">
-                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
                     交易中 (0)
                 </button>
-                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
+                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
                     成交
                 </button>
-                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
+                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
                     取消
                 </button>
             </div>
@@ -472,7 +472,7 @@ function initMonthTabs() {
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100';
 
         html += `
-            <button onclick="selectMonthTab('${ymValue}')" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out ${activeClass}">
+            <button onclick="selectMonthTab('${ymValue}')" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center ${activeClass}">
                 ${i} 月
             </button>
         `;

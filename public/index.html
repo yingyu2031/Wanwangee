@@ -127,15 +127,19 @@
 </div>
 <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
 <div id="fulfillmentSection" class="space-y-4 hidden">
-         <!-- 搜尋框 -->
-                <div>
-                    <input type="text" id="orderSearchKeyword" placeholder="搜尋商品名稱或預購人..." oninput="filterOrders()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
-                </div>
+    <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->
+    <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
 
-        <!-- 1. 上方工具與書籤式子分頁總包裹容器 -->
+    <!-- 搜尋框：手機版全寬，電腦版靠右對齊並保持適當寬度 -->
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+            <input type="text" id="orderSearchKeyword" placeholder="搜尋商品名稱或預購人..." oninput="filterOrders()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
+        </div>
+
+        <!-- 2. 上方工具與書籤式子分頁總包裹容器 -->
         <div class="relative">
+            
             <!-- 狀態子分頁（書籤式活頁標籤） -->
-            <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10" overflow-x-auto">
+            <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10">
                 <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
                     交易中 (0)
                 </button>
@@ -147,8 +151,9 @@
                 </button>
             </div>
 
-            <!-- 2. 主內頁容器 -->
+            <!-- 3. 主內頁容器 -->
             <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
+                
                 <!-- 批次群發 LINE 通知按鈕 -->
                 <button onclick="batchNotifyLine()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-3 rounded-xl transition shadow-md flex items-center justify-center space-x-1">
                     <span>批次群發 LINE 通知</span>
@@ -181,6 +186,8 @@
 
             </div>
         </div>
+
+    </div>
 </div>
         <!-- ================= 區塊 C：會員名單管理 ================= -->
         <div id="membersSection" class="space-y-4 hidden">

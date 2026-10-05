@@ -126,29 +126,8 @@
         </div>
     </div>
 </div>
-        <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
-   <div id="fulfillmentSection" class="space-y-4 hidden">
-    <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->
-    <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
-
-        <!-- 1. 上方工具與書籤式子分頁總包裹容器 -->
-        <div class="relative">
-            
-            <!-- 狀態子分頁（書籤式活頁標籤：貼齊頂部並往上浮動） -->
-            <!-- 狀態子分頁（僅保留交易中顯示數量，成交與取消移除筆數） -->
-                <div class="flex items-end space-x-1 px-4 scrollbar-none relative z-10 overflow-x-auto">
-                    <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
-                        交易中 (0)
-                    </button>
-                    <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
-                        成交
-                    </button>
-                    <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
-                        取消
-                    </button>
-                </div>
-<!-- 2. 主內頁容器：使用 -mt-2 與頁籤完美無縫銜接 -->
-   <div id="fulfillmentSection" class="space-y-4 hidden">
+<!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
+<div id="fulfillmentSection" class="space-y-4 hidden">
     <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->
     <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
 
@@ -171,7 +150,7 @@
             <!-- 2. 主內頁容器 -->
             <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
                 
-                <!-- 搜尋框移到內頁裡，並綁定 oninput 事件 -->
+                <!-- 搜尋框 -->
                 <div>
                     <input type="text" id="orderSearchKeyword" placeholder="搜尋商品名稱或預購人..." oninput="filterOrders()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
                 </div>
@@ -205,11 +184,12 @@
                         </table>
                     </div>
                 </div>
+
             </div>
         </div>
+
     </div>
 </div>
-
         <!-- ================= 區塊 C：會員名單管理 ================= -->
         <div id="membersSection" class="space-y-4 hidden">
             <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center">
@@ -472,14 +452,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProducts();
 });
 
-// 初始化 12 個書籤式月份頁籤 (支援圖中的圓角分頁造型)
+// 1. 初始化 12 個書籤式月份頁籤
 function initMonthTabs() {
     const container = document.getElementById('monthTabsContainer');
     if (!container) return;
 
-    // 從文字輸入框讀取當前年份，若被清空則預設為今年
-    const yearMonthInput = document.getElementById('filterYearMonth');
-    const inputVal = yearMonthInput ? yearMonthInput.value.trim() : '';
+    // 修正：讀取正確的 ID -> filterYearInput
+    const yearInput = document.getElementById('filterYearInput');
+    const inputVal = yearInput ? yearInput.value.trim() : '';
     const selectedYear = inputVal.length >= 4 ? inputVal.substring(0, 4) : new Date().getFullYear().toString();
 
     let html = '';
@@ -488,7 +468,6 @@ function initMonthTabs() {
         const ymValue = `${selectedYear}-${monthStr}`;
         const isActive = (ymValue === currentSelectedYM);
 
-        // 書籤式圓角造型樣式 (上圓角、平底)
         const activeClass = isActive 
             ? 'bg-brandYellow text-brandBlack font-black shadow-lg rounded-t-xl rounded-b-none py-2.5 px-5' 
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100';
@@ -502,17 +481,14 @@ function initMonthTabs() {
     container.innerHTML = html;
 }
 
-// 當上方年份文字輸入框改變時
-function onYearMonthInputChange() {
-    const yearMonthInput = document.getElementById('filterYearMonth');
-    const val = yearMonthInput ? yearMonthInput.value.trim() : '';
+// 2. 當上方年份文字輸入框改變時 (修正 ID 對應)
+function onYearInputChange() {
+    const yearInput = document.getElementById('filterYearInput');
+    const val = yearInput ? yearInput.value.trim() : '';
     
-    // 如果輸入的是完整年月 (YYYY-MM)，則直接更新選中的年月
-    if (val.length >= 7) {
-        currentSelectedYM = val;
-    } else if (val.length >= 4) {
-        // 如果只輸入年份 (YYYY)，則保留原本的月份
-        const currentMonth = currentSelectedYM.split('-')[1] || '10';
+    // 如果輸入了年份 (例如 2027)，保留原本的月份，替換年份
+    const currentMonth = currentSelectedYM.split('-')[1] || '10';
+    if (val.length >= 4) {
         currentSelectedYM = `${val}-${currentMonth}`;
     }
 
@@ -520,20 +496,19 @@ function onYearMonthInputChange() {
     loadProducts();
 }
 
-// 點擊特定月份書籤
+// 3. 點擊特定月份書籤
 function selectMonthTab(ym) {
     currentSelectedYM = ym;
     
-    // 同步更新上方的文字輸入框
-    const yearMonthInput = document.getElementById('filterYearMonth');
-    if (yearMonthInput) {
-        yearMonthInput.value = ym;
+    // 同步更新上方的年份輸入框（只取年份部分填入）
+    const yearInput = document.getElementById('filterYearInput');
+    if (yearInput) {
+        yearInput.value = ym.split('-')[0];
     }
 
     initMonthTabs(); 
     loadProducts();  
 }
-
 // 載入商品 API
 async function loadProducts() {
     const keywordInput = document.getElementById('searchKeyword');

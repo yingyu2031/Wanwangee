@@ -1169,7 +1169,7 @@ function renderAllocationTable() {
                     <tr class="border-b border-zinc-800 text-zinc-400">
                         <th class="p-2 text-center w-12">分派</th>
                         <th class="p-2">下單時間</th>
-                        <th class="p-2">暱稱 (姓名)</th>
+                        <th class="p-2">姓名(LINE)</th>
                         <th class="p-2 text-center">數量</th>
                         <th class="p-2 text-center">狀態</th>
                     </tr>
@@ -1213,7 +1213,7 @@ function renderAllocationTable() {
                                     />
                                 </td>
                                 <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
-                                <td class="p-2 font-bold text-white">${nickname} <span class="text-[10px] text-zinc-500">(${realName})</span></td>
+                                <td class="p-2 font-bold text-white">${realName} <span class="text-[10px] text-zinc-500">(${nickname})</span></td>
                                 <td class="p-2 text-center text-brandYellow font-bold">${order.quantity}</td>
                                 <td class="p-2 text-center text-xs">${statusBadge}</td>
                             </tr>
@@ -1351,19 +1351,6 @@ function closeDetailModal() {
     }
 }
 
-        
-        function promptDate(badgeId, textPrefix) {
-            let date = prompt("請選擇/輸入日期 (格式 YYYY-MM-DD)：", "2026-10-15");
-            if (date) {
-                let badge = document.getElementById(badgeId);
-                if (badge) {
-                    badge.className = "text-green-400 font-bold text-[11px]";
-                    badge.innerText = `${textPrefix} (${date})`;
-                }
-                alert(`成功更新日期：${date}`);
-            }
-        }
-
         function resendNotification(customer) {
             if(confirm(`此功能尚未完成`)) {
                 alert(`敬請期待`);
@@ -1404,7 +1391,7 @@ async function cancelAndReassign(orderId, customer, productId) {
                     <label class="flex items-center space-x-3 p-2 hover:bg-zinc-800 rounded cursor-pointer border border-zinc-700 mb-2">
                         <input type="radio" name="reassignCandidate" value="${candidate.id}" class="w-4 h-4 accent-brandYellow">
                         <div class="text-zinc-300 text-sm">
-                            <span class="font-bold text-white">${candidate.line_nickname || '*'}</span>
+                            <span class="font-bold text-white">${candidate.real_name}(${candidate.line_nickname || '*'})</span>
                             <span class="text-xs text-zinc-500 ml-2">(${candidate.order_time ? candidate.order_time.replace('T', ' ').substring(5, 16) : ''})</span>
                             <div class="text-brandYellow text-xs mt-1">預購數量：${candidate.quantity}</div>
                         </div>

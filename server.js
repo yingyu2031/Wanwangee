@@ -93,7 +93,6 @@ const initDB = async () => {
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
         memo TEXT DEFAULT '',
-        is_allocated BOOLEAN DEFAULT FALSE
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (

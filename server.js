@@ -222,10 +222,10 @@ app.get('/api/categories', async (req, res) => {
     }
 });
 
-// --- 3. 商品與預購專案 API ---
+// --- 取得商品列表 (加入分類篩選) ---
 app.get('/api/products', async (req, res) => {
   try {
-    const { year_month, keyword } = req.query;
+    const { year_month, keyword, category_id } = req.query; // 新增 category_id
     let query = `SELECT p.*, a.qty FROM products p
       LEFT JOIN (
           SELECT product_id, SUM(quantity) as qty 
@@ -237,22 +237,29 @@ app.get('/api/products', async (req, res) => {
     let values = [];
     let paramIndex = 1;
 
-    // 1. 發售年月篩選（如果不是 all 且有填寫，才加入條件）
+    // 1. 發售年月篩選
     if (year_month && year_month !== 'all' && year_month.trim() !== '') {
-      query += ` AND year_month ILIKE $${paramIndex}`;
+      query += ` AND p.year_month ILIKE $${paramIndex}`;
       values.push(`%${year_month.trim()}%`);
       paramIndex++;
     }
 
     // 2. 品名關鍵字搜尋
     if (keyword && keyword.trim() !== '') {
-      query += ` AND name ILIKE $${paramIndex}`;
+      query += ` AND p.name ILIKE $${paramIndex}`;
       values.push(`%${keyword.trim()}%`);
       paramIndex++;
     }
 
-    // 3. 排序規則：第一排序發售年月新到舊，第二排序預購截止日新到舊
-    query += ' ORDER BY year_month DESC, end_time DESC';
+    // 3. 分類篩選 (新增)
+    if (category_id && category_id.trim() !== '') {
+      query += ` AND p.category_id = $${paramIndex}`;
+      values.push(category_id);
+      paramIndex++;
+    }
+
+    // 排序規則
+    query += ' ORDER BY p.year_month DESC, p.end_time DESC';
 
     const result = await pool.query(query, values);
     res.json({ success: true, data: result.rows });
@@ -262,16 +269,18 @@ app.get('/api/products', async (req, res) => {
 });
 
 
+// --- 新增商品 API (加入 category_id) ---
 app.post('/api/products', async (req, res) => {
   try {
-    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    const { category_id, name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
     
     const query = `
-      INSERT INTO products (name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      INSERT INTO products (category_id, name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *;
     `;
     const values = [
+      category_id || null, // 沒填就給 null
       name, 
       image_url || '', 
       year_month, 
@@ -295,21 +304,22 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-// --- 修改/更新商品 API ---
+
+// --- 修改/更新商品 API (加入 category_id) ---
 app.put('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
+    const { category_id, name, image_url, year_month, quota, start_time, end_time, price, pre_price, is_limited, limit_qty, need_deposit, deposit_amount, memo, status } = req.body;
     
-    // 如果沒有上傳新圖片（image_url 是空的），我們可以選擇保留原本的圖片或更新
     let query = `
       UPDATE products 
-      SET name = $1, image_url = $2, year_month = $3, quota = $4, start_time = $5, end_time = $6, price = $7, pre_price = $8, is_limited = $9, limit_qty = $10, need_deposit = $11, deposit_amount = $12, memo = $13, status = $14
-      WHERE id = $15
+      SET category_id = $1, name = $2, image_url = $3, year_month = $4, quota = $5, start_time = $6, end_time = $7, price = $8, pre_price = $9, is_limited = $10, limit_qty = $11, need_deposit = $12, deposit_amount = $13, memo = $14, status = $15
+      WHERE id = $16
       RETURNING *;
     `;
     
     const values = [
+      category_id || null, // 沒填就給 null
       name, 
       image_url || '', 
       year_month, 
@@ -338,11 +348,18 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-// 用 ID 取得單一商品資料
+
+// 用 ID 取得單一商品資料 
 app.get('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
+    const query = `
+        SELECT p.*, c.name as category_name 
+        FROM products p 
+        LEFT JOIN categories c ON p.category_id = c.id 
+        WHERE p.id = $1
+    `;
+    const result = await pool.query(query, [id]);
     if (result.rows.length > 0) {
       res.json({ success: true, data: result.rows[0] });
     } else {
@@ -353,7 +370,7 @@ app.get('/api/products/:id', async (req, res) => {
   }
 });
 
-// --- 刪除商品 API ---
+// --- 刪除商品 API  ---
 app.delete('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -367,7 +384,6 @@ app.delete('/api/products/:id', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
 // --- 取得指定商品的預購人明細 API ---
 app.get('/api/products/:id/orders', async (req, res) => {
   try {

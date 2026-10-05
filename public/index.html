@@ -579,7 +579,7 @@ async function loadProducts() {
 // 記錄當前選中的子分頁狀態（預設為交易中）
 let currentStatus = '交易中';
 
-// 1. 切換子分頁並重新載入對應訂單
+// 切換子分頁並重新載入對應訂單
 function switchSubTab(status) {
     currentStatus = status; // 更新當前狀態變數
 
@@ -605,32 +605,21 @@ function switchSubTab(status) {
     loadOrders(status);
 }
 
-// 2. 點擊「出貨」或「收款」按鈕時觸發的彈窗與更新函式
-async function promptDate(badgeId, targetStatus) {
-    // 取得當前系統日期作為預設值 (格式: YYYY-MM-DD)
+// 點擊「出貨」或「收款」按鈕時觸發的彈窗（名稱與 HTML 呼叫的 openDatePrompt 對應）
+async function openDatePrompt(orderId, type, targetStatus) {
+    // 1. 取得當前系統日期作為預設值 (格式: YYYY-MM-DD)
     const today = new Date().toISOString().split('T')[0];
-    
-    // 判斷是出貨還是收款
-    const type = targetStatus === '已寄出' ? 'shipping' : 'payment';
     const actionName = targetStatus === '已寄出' ? '出貨日期' : '收款日期';
 
-    // 彈出視窗讓管理者輸入或確認日期
+    // 2. 彈出視窗讓管理者輸入或確認日期
     const inputDate = prompt(`請輸入${actionName} (格式: YYYY-MM-DD):`, today);
     if (inputDate === null) return; // 使用者按取消
 
-    // 從 badgeId（例如 shipBadge1 或 payBadge1）解析出訂單 ID
-    const idMatch = badgeId.match(/\d+/);
-    if (!idMatch) {
-        alert('找不到對應的訂單編號');
-        return;
-    }
-    const orderId = idMatch[0];
-
-    // 呼叫更新狀態 API
+    // 3. 呼叫更新狀態的 API
     await updateOrderStatus(orderId, type, targetStatus, inputDate);
 }
 
-// 3. 發送 API 更新出貨/收款狀態
+// 發送 API 更新出貨/收款狀態
 async function updateOrderStatus(id, type, statusValue, dateValue) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
@@ -646,7 +635,7 @@ async function updateOrderStatus(id, type, statusValue, dateValue) {
         const result = await res.json();
         if (result.success) {
             // 更新成功後，重新載入當前分頁資料
-            loadOrders(currentStatus);
+            loadOrders(currentOrderStatus || '交易中');
         } else {
             alert('更新失敗: ' + result.message);
         }
@@ -701,7 +690,7 @@ async function updateOrderMemo(id, memoValue) {
                                 <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isShipped ? '已寄出' : '未寄出'}
                                 </span>
-                                   <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
+                                   <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">🚚</button>
                             </div>
                         </td>
                         <td class="p-3">
@@ -709,7 +698,7 @@ async function updateOrderMemo(id, memoValue) {
                                 <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isPaid ? '已收款' : '未收款'}
                                 </span>
-                                <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
+                                <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">💰</button>
                             </div>
                         </td>
                         <td class="p-3 text-zinc-400 font-mono text-[11px]">

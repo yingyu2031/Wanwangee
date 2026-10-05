@@ -407,16 +407,29 @@ app.post('/api/products/:id/allocate', async (req, res) => {
 
 
 // 到貨與出貨對帳名單明細api
-app.get('/api/orders', async (req, res) => {
+app.get('/api/admin/orders', async (req, res) => {
     try {
-        const { status = 'trading', keyword = '' } = req.query;
+        const { status = '交易中', keyword = '' } = req.query;
 
         let query = `
-            SELECT o.*, u.nickname AS buyer_name, u.uid AS buyer_uid, p.name AS product_name
+            SELECT o.*, 
+                   u.real_name, 
+                   u.line_nickname, 
+                   p.name AS product_name,
+                   CASE 
+                       WHEN o.status = 'trading' THEN '交易中'
+                       WHEN o.status = 'completed' THEN '成交'
+                       WHEN o.status = 'cancelled' THEN '取消'
+                       ELSE o.status
+                   END AS status_zh
             FROM orders o
             JOIN users u ON o.uid = u.uid
             JOIN products p ON o.product_id = p.id
-            WHERE o.status = $1 AND o.is_allocated = TRUE
+            WHERE (o.status = $1 OR 
+                   (o.status = 'trading' AND $1 = '交易中') OR 
+                   (o.status = 'completed' AND $1 = '成交') OR 
+                   (o.status = 'cancelled' AND $1 = '取消'))
+              AND o.is_allocated = TRUE
         `;
         let params = [status];
 

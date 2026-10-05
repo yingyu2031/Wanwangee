@@ -1106,6 +1106,48 @@ let currentProductId = null;
 let currentOrdersData = [];
 
 // 開啟預購人明細與到貨分派彈窗
+async function openDetailModal(productId, productName) {
+    currentProductId = productId;
+    const modal = document.getElementById('detailModal');
+    const title = document.getElementById('detailModalTitle');
+    const content = document.getElementById('detailModalContent');
+    const actualStockInput = document.getElementById('actualStockInput');
+
+    title.innerText = `到貨分派與預購明細：${productName || '商品'}`;
+    content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
+    actualStockInput.value = 0;
+
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    try {
+        const [productRes, ordersRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/products/${productId}`),
+            fetch(`${API_BASE_URL}/api/products/${productId}/orders`)
+        ]);
+
+        const productResult = await productRes.json();
+        const ordersResult = await ordersRes.json();
+
+        if (productResult.success) {
+            actualStockInput.value = productResult.data.actual_stock || 0;
+        }
+
+        if (ordersResult.success) {
+            currentOrdersData = ordersResult.data || [];
+            renderAllocationTable();
+        } else {
+            content.innerHTML = '<p class="text-center text-red-400 py-6">載入明細失敗</p>';
+        }
+    } catch (err) {
+        console.error('取得資料錯誤:', err);
+        content.innerHTML = '<p class="text-center text-red-400 py-6">伺服器連線失敗</p>';
+    }
+}
+
+// 渲染表格內容        
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     

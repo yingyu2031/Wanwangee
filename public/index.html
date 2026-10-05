@@ -424,8 +424,10 @@
             if (activeBtn) activeBtn.className = "bg-brandYellow text-brandBlack px-5 py-2.5 rounded-xl text-xs font-black transition shadow whitespace-nowrap";
 
             if (tab === 'products') loadProducts();
-            if (tab === 'fulfillment') loadOrders(currentOrderStatus);
+            if (tab === 'fulfillment') {
+        loadOrders('交易中'); }
             if (tab === 'members') loadMembers();
+
         }
         
 
@@ -660,10 +662,14 @@ async function updateOrderMemo(id, memoValue) {
         
         // 載入訂單 API
    async function loadOrders(status) {
+    const tbody = document.getElementById('ordersTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-zinc-500">載入中...</td></tr>';
+    }
+
     try {
-        const res = await fetch(`${API_BASE_URL}/api/admin/orders?status=${status}`);
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders?status=${encodeURIComponent(status)}`);
         const result = await res.json();
-        const tbody = document.getElementById('ordersTableBody');
         
         if (result.success && result.data && result.data.length > 0) {
             tbody.innerHTML = result.data.map((o, index) => {
@@ -690,7 +696,7 @@ async function updateOrderMemo(id, memoValue) {
                                 <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isShipped ? '已寄出' : '未寄出'}
                                 </span>
-                                   <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">🚚</button>
+                                   <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">出貨</button>
                             </div>
                         </td>
                         <td class="p-3">
@@ -698,7 +704,7 @@ async function updateOrderMemo(id, memoValue) {
                                 <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
                                     ${isPaid ? '已收款' : '未收款'}
                                 </span>
-                                <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">💰</button>
+                                <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">收款</button>
                             </div>
                         </td>
                         <td class="p-3 text-zinc-400 font-mono text-[11px]">
@@ -713,12 +719,15 @@ async function updateOrderMemo(id, memoValue) {
                         </td>
                     </tr>
                 `;
-            }).join('');
+           }).join('');
         } else {
             tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-zinc-500">目前沒有相關訂單紀錄</td></tr>';
         }
     } catch (err) {
         console.error('載入訂單失敗:', err);
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-red-400">載入資料發生錯誤</td></tr>';
+        }
     }
 }
 

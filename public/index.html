@@ -758,6 +758,9 @@ function renderOrdersTable(orders) {
         const buyerDisplayName = o.real_name || '未填寫';
         const lineNick = o.line_nickname || '未知';
         
+        // 💡 判斷是否為「取消」狀態
+        const isCancelled = (o.status === '取消');
+        
         const shipStatus = o.shipping_status || '未寄出';
         const payStatus = o.payment_status || '未收款';
         const isShipped = (shipStatus === '已寄出' || shipStatus === 'shipped');
@@ -766,48 +769,65 @@ function renderOrdersTable(orders) {
         const shipDateStr = o.shipping_date ? ` (${o.shipping_date.substring(5, 10)})` : '';
         const payDateStr = o.payment_date ? ` (${o.payment_date.substring(5, 10)})` : '';
 
-        const shipDisplay = isShipped ? `已寄出${shipDateStr}` : '未寄出';
-        const payDisplay = isPaid ? `已收款${payDateStr}` : '未收款';
+        // 💡 修正：整合宣告，依據是否取消來決定顯示文字與樣式
+        const shipDisplay = isCancelled ? '<span class="text-zinc-600">未寄出</span>' : (isShipped ? `已寄出${shipDateStr}` : '未寄出');
+        const payDisplay = isCancelled ? '<span class="text-zinc-600">未收款</span>' : (isPaid ? `已收款${payDateStr}` : '未收款');
+        
+        const shipClass = isCancelled ? '' : (isShipped ? 'text-green-400' : 'text-red-400');
+        const payClass = isCancelled ? '' : (isPaid ? 'text-green-400' : 'text-red-400');
 
         return `
-            <tr>
-                <td class="p-3 sticky-col-1 font-bold text-white">
+            <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition ${isCancelled ? 'opacity-60' : ''}">
+                <td class="p-3 sticky-col-1 font-bold text-white bg-zinc-950 ${isCancelled ? 'text-zinc-500' : ''}">
                     ${buyerDisplayName} 
                     <span class="text-[10px] text-zinc-500 block">(${lineNick})</span>
                 </td>
-                <td class="p-3 font-medium">${o.product_name || '未命名商品'}</td>
-                <td class="p-3 text-center font-bold text-brandYellow">${o.quantity || 1}</td>
+                <td class="p-3 font-medium ${isCancelled ? 'text-zinc-500' : ''}">${o.product_name || '未命名商品'}</td>
+                <td class="p-3 text-center font-bold ${isCancelled ? 'text-zinc-600' : 'text-brandYellow'}">${o.quantity || 1}</td>
+                
                 <td class="p-3">
                     <div class="flex items-center space-x-1.5">
-                        <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
+                        <span id="shipBadge${id}" class="${shipClass} font-bold text-[11px]">
                             ${shipDisplay}
                         </span>
+                        ${isCancelled ? '' : `
                         <button onclick="openDatePrompt(${id}, 'shipping', '已寄出')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap">
                             出貨
                         </button>
+                        `}
                     </div>
                 </td>
+                
                 <td class="p-3">
                     <div class="flex items-center space-x-1.5">
-                        <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
+                        <span id="payBadge${id}" class="${payClass} font-bold text-[11px]">
                             ${payDisplay}
                         </span>
+                        ${isCancelled ? '' : `
                         <button onclick="openDatePrompt(${id}, 'payment', '已收款')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2.5 py-1 rounded text-[10px] font-bold whitespace-nowrap">
                             收款
                         </button>
+                        `}
                     </div>
                 </td>
+                
                 <td class="p-3 text-zinc-400 font-mono text-[11px]">
                     ${o.last_notify_time ? o.last_notify_time : '-'} 
+                    ${isCancelled ? '' : `
                     <button onclick="resendNotification('${buyerDisplayName}')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">通知</button>
+                    `}
                 </td>
+                
                 <td class="p-3">
-                    <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
+                    <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" 
+                        class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow ${isCancelled ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}"
+                        ${isCancelled ? 'readonly tabindex="-1"' : ''}>
                 </td>
+                
                 <td class="p-3 text-right">
-                    ${o.status === '取消' 
+                    ${isCancelled 
                         ? `<span class="text-zinc-600 font-bold text-[10px]">已取消</span>`
-                        : `<button onclick="cancelAndReassign(${id}, '${buyerDisplayName}', ${o.product_id})" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>`
+                        : `<button onclick="cancelAndReassign(${id}, '${buyerDisplayName}',${o.product_id})" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>`
                     }
                 </td>
             </tr>

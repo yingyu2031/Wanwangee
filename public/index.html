@@ -133,10 +133,11 @@
             <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
 
             <!-- 狀態子分頁 -->
+           <!-- 狀態子分頁（書籤式活頁標籤） -->
             <div class="flex items-end space-x-1 border-b border-zinc-800 px-2 pt-2 text-xs font-bold overflow-x-auto">
-                <button onclick="switchSubTab('trading')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500">交易中 (4)</button>
-                <button onclick="switchSubTab('completed')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">成交 (0)</button>
-                <button onclick="switchSubTab('cancelled')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">取消 (0)</button>
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500">交易中 (4)</button>
+                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">成交 (0)</button>
+                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">取消 (0)</button>
             </div>
         </div>
 
@@ -570,8 +571,33 @@ async function loadProducts() {
     }
 }
 
+// 切換子分頁並重新載入訂單資料
+function switchSubTab(status) {
+    // 定義按鈕與對應狀態
+    const tabs = [
+        { id: 'subTabTrading', name: '交易中' },
+        { id: 'subTabCompleted', name: '成交' },
+        { id: 'subTabCancelled', name: '取消' }
+    ];
 
+    // 動態切換每個分頁按鈕的樣式（達成選中時突出的書籤感）
+    tabs.forEach(tab => {
+        const btn = document.getElementById(tab.id);
+        if (!btn) return;
 
+        if (tab.name === status) {
+            // 選中狀態：黃色、向上浮動、圓角調整
+            btn.className = "bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold";
+        } else {
+            // 未選中狀態：深灰、沉穩壓低
+            btn.className = "bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800 font-bold";
+        }
+    });
+
+    // 呼叫您原本的 loadOrders 函式去後端撈取該狀態的訂單
+    loadOrders(status);
+}
+        
         // 載入訂單 API
      async function loadOrders(status) {
     try {

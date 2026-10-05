@@ -92,10 +92,9 @@
         </div>
 
 <!-- ================= 區塊 A：商品上架與預購管理 ================= -->
-<!-- 外層包裹容器：形成一整本書本或檔案夾的視覺外框 -->
-<div id="productsSection" class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
-
-    <!-- 1. 上方工具列：年份輸入與品名搜尋（作為筆記本的標題/設定列） -->
+<div id="productsSection" class="space-y-3">
+    
+    <!-- 1. 年份輸入與搜尋列 -->
     <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
         <div class="w-full sm:w-auto">
             <input type="text" id="filterYearInput" value="2026" placeholder="輸入年份 (例如: 2026)" oninput="onYearInputChange()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none focus:border-brandYellow w-full sm:w-64">
@@ -103,13 +102,13 @@
         <div class="flex items-center space-x-2 w-full sm:w-auto">
             <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
         </div>
+    </div>   
+    <!-- 2. 書籤式 12 個月份橫向頁籤 -->
+    <div class="flex items-end space-x-1 overflow-x-auto px-2 pt-1 scrollbar-none relative z-10" id="monthTabsContainer">
+        <!-- 透過 JS 動態生成書籤式月份按鈕 -->
     </div>
 
-    <!-- 2. 書籤式 12 個月份橫向頁籤（緊貼下方主內頁容器上方） -->
-    <div class="flex items-end space-x-1 overflow-x-auto px-2 pt-2 scrollbar-none" id="monthTabsContainer">
-        <!-- 透過 JS 動態生成書籤式月份按鈕（建議生成時帶有 rounded-t-xl 且未選中時帶有背景沈穩感） -->
-    </div>
-    <!-- 3. 內頁主容器（包覆上架按鈕與商品網格，與上方頁籤完美無縫接合） -->
+    <!-- 3. 內頁主容器：透過 -mt-3 讓它往上貼近頁籤，產生無縫書本感 -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-3">
         
         <!-- 上架新商品按鈕 -->
@@ -123,7 +122,6 @@
         </div>
     </div>
 </div>
-
         <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
     <div id="fulfillmentSection" class="space-y-4 hidden">
     <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->

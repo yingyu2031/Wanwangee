@@ -355,7 +355,7 @@ app.get('/api/products/:id/orders', async (req, res) => {
     const { id } = req.params;
     
     const query = `
-      SELECT o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo, o.is_allocated,
+      SELECT o.id, o.order_no, o.quantity, o.order_time, o.status, o.shipping_status, o.payment_status, o.memo, o.is_allocated,
              u.real_name, u.uid, u.line_nickname
       FROM orders o
       LEFT JOIN users u ON o.uid = u.uid
@@ -547,10 +547,15 @@ app.patch('/api/admin/orders/:id/memo', async (req, res) => {
 
 // 取消訂單並將名額改派給其他候補預購人
 app.patch('/api/admin/orders/reassign', async (req, res) => {
+    // 💡 防呆保護：避免前端傳來字串 "undefined" 搞崩資料庫
+    const { cancelOrderId, reassignOrderId } = req.body;
+    
+    if (!cancelOrderId || cancelOrderId === 'undefined') {
+        return res.status(400).json({ success: false, message: '無效的取消訂單 ID' });
+    }
+
     const client = await pool.connect();
     try {
-        const { cancelOrderId, reassignOrderId } = req.body;
-        
         await client.query('BEGIN'); // 開啟交易
 
         // 1. 將原本的訂單標記為取消、解除分派，並清空出貨/收款狀態
@@ -566,8 +571,8 @@ app.patch('/api/admin/orders/reassign', async (req, res) => {
             throw new Error('找不到要取消的訂單');
         }
 
-        // 2. 如果有選擇改派對象，則將其標記為已分派
-        if (reassignOrderId) {
+        // 2. 如果有選擇改派對象 (且不是 undefined)，則將其標記為已分派
+        if (reassignOrderId && reassignOrderId !== 'undefined') {
             const reassignQuery = `
                 UPDATE orders 
                 SET is_allocated = TRUE, status = '交易中'

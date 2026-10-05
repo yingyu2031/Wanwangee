@@ -101,9 +101,8 @@
         <div class="flex items-center space-x-2 w-full sm:w-auto ml-auto">
     <!-- 分類下拉選單 -->
         <select id="categorySelect" onchange="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white focus:outline-none focus:border-brandYellow cursor-pointer">
-            <option value="">全部分類</option>
-            <option value="category1">鋼普拉</option>
-            <option value="category2">公仔</option>
+                <option value="">全部分類</option>
+                <!-- 下方的選項將由 JavaScript 動態寫入 -->
         </select>
         <!-- 搜尋框 (將固定寬度 sm:w-64 或 sm:w-72 設在 input 上) -->
             <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
@@ -424,6 +423,33 @@
         function logout() {
             document.getElementById('loginModal').classList.remove('hidden');
         }
+
+        // 從後端 API 獲取分類並渲染到下拉選單
+async function loadCategories() {
+    try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) throw new Error('網路回應錯誤');
+        
+        const categories = await response.json();
+        const categorySelect = document.getElementById('categorySelect');
+
+        // 將抓回來的分類資料轉為 <option> 並加到選單中
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;       // 設定 value 為分類的 id
+            option.textContent = category.name; // 設定顯示的文字為分類名稱
+            categorySelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error('載入分類失敗:', error);
+    }
+}
+
+// 確保網頁 DOM 元素都載入完成後，執行獲取分類的動作
+document.addEventListener('DOMContentLoaded', () => {
+    loadCategories();
+});
 
         // 頁籤切換
         function switchAdminTab(tab) {

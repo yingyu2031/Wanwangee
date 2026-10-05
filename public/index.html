@@ -138,19 +138,18 @@
         <!-- 2. 上方工具與書籤式子分頁總包裹容器 -->
         <div class="relative">
             
-            <!-- 狀態子分頁（書籤式活頁標籤） -->
-            <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10">
-                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
+           <!-- 狀態子分頁（書籤式活頁標籤） -->
+            <div class="flex items-end space-x-1 px-4 scrollbar-none relative z-10 overflow-x-auto">
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="text-xs whitespace-nowrap transition-all duration-200 text-center bg-brandYellow text-brandBlack font-black shadow-lg rounded-t-xl rounded-b-none py-2.5 px-5 z-10">
                     交易中 (0)
                 </button>
-                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
+                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="text-xs whitespace-nowrap transition-all duration-200 text-center bg-zinc-900 text-zinc-400 hover:text-white font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100">
                     成交
                 </button>
-                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center">
+                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="text-xs whitespace-nowrap transition-all duration-200 text-center bg-zinc-900 text-zinc-400 hover:text-white font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100">
                     取消
                 </button>
             </div>
-
             <!-- 3. 主內頁容器 -->
             <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
                 
@@ -469,10 +468,10 @@ function initMonthTabs() {
 
         const activeClass = isActive 
             ? 'bg-brandYellow text-brandBlack font-black shadow-lg rounded-t-xl rounded-b-none py-2.5 px-5' 
-            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100';
+            : 'bg-zinc-900 text-zinc-400 hover:text-white font-bold rounded-t-xl rounded-b-none py-2 px-4 transition-all duration-300 ease-in-out';
 
         html += `
-            <button onclick="selectMonthTab('${ymValue}')" class="bg-zinc-900 text-xs whitespace-nowrap transition-all duration-200 text-center ${activeClass}">
+            <button onclick="selectMonthTab('${ymValue}')" class="text-xs whitespace-nowrap transition-all duration-200 text-center ${activeClass}">
                 ${i} 月
             </button>
         `;
@@ -573,9 +572,10 @@ async function loadProducts() {
 // 記錄當前選中的子分頁狀態（預設為交易中）
 let currentStatus = '交易中';
 
-// 1. 切換子分頁並重新載入對應訂單
+
+ // 切換子分頁並重新載入對應訂單
 function switchSubTab(status) {
-    currentStatus = status;
+    currentStatus = status; // 更新當前狀態變數
 
     const tabs = [
         { id: 'subTabTrading', name: '交易中' },
@@ -583,19 +583,28 @@ function switchSubTab(status) {
         { id: 'subTabCancelled', name: '取消' }
     ];
 
+    // 動態切換每個分頁按鈕的樣式（與月份書籤風格完全一致）
     tabs.forEach(tab => {
         const btn = document.getElementById(tab.id);
         if (!btn) return;
 
         if (tab.name === status) {
-            btn.className = "bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs";
+            // 選中狀態：黃底黑字、向上浮動微凸、粗體
+            btn.className = "text-xs whitespace-nowrap transition-all duration-200 text-center bg-brandYellow text-brandBlack font-black shadow-lg rounded-t-xl rounded-b-none py-2.5 px-5 -translate-y-1 z-10";
+            
+          
+            if (tab.id === 'subTabTrading') {
+                // 這裡會自動帶入當前計算好的數量
+            }
         } else {
-            btn.className = "bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs";
+            // 未選中狀態：深色背景、無邊框、圓潤圓角
+            btn.className = "text-xs whitespace-nowrap transition-all duration-200 text-center bg-zinc-900 text-zinc-400 hover:text-white font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100";
         }
     });
 
+    // 呼叫載入訂單函式
     loadOrders(status);
-}
+}       
 
 // 2. 點擊「出貨」或「收款」按鈕時觸發（支援取消狀態與帶入原日期）
 async function openDatePrompt(orderId, type, targetStatus) {

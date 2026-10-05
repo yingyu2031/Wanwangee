@@ -1101,11 +1101,12 @@ async function deleteProduct() {
     }
 }
 
+
 // 全域變數用來暫存當前開啟的商品 ID 與訂單明細資料
 let currentProductId = null;
 let currentOrdersData = [];
 
-// 開啟預購人明細與到貨分派彈窗
+// 1. 開啟預購人明細與到貨分派彈窗
 async function openDetailModal(productId, productName) {
     currentProductId = productId;
     const modal = document.getElementById('detailModal');
@@ -1147,7 +1148,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 渲染表格內容        
+// 2. 渲染表格內容（已修復屬性間距與成交反灰鎖定）        
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1222,8 +1223,8 @@ function renderAllocationTable() {
 
     updateAllocationStatus();
 }
-        
-// 當勾選框變動時的防呆控制與計算（改為計算數量總和）
+
+// 3. 當勾選框變動時的防呆控制與計算
 function handleCheckboxChange(index) {
     const checkboxes = document.querySelectorAll('.allocation-checkbox');
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
@@ -1261,7 +1262,8 @@ function handleCheckboxChange(index) {
 
     updateAllocationStatus();
 }
-// 更新畫面上狀態文字與控管 Checkbox 是否能點選
+
+// 4. 更新畫面上狀態文字與控管 Checkbox 是否能點選
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
@@ -1283,10 +1285,13 @@ function updateAllocationStatus() {
         statusText.classList.add('text-zinc-300');
     }
 
-    // 當剩餘到貨量不足以負荷該筆項目的數量時，自動將未勾選的項目轉為 disabled
+    // 當剩餘到貨量不足以負荷該筆項目的數量時，自動將未勾選的項目轉為 disabled (成交狀態維持鎖定)
     checkboxes.forEach((cb, index) => {
-        const itemQty = Number(currentOrdersData[index].quantity) || 0;
-        if (!currentOrdersData[index].is_allocated && (allocatedQty + itemQty > actualStock)) {
+        const order = currentOrdersData[index];
+        if (order.status === '成交') return; // 成交狀態保持不動
+
+        const itemQty = Number(order.quantity) || 0;
+        if (!order.is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;
             cb.closest('tr').classList.add('opacity-40');
         } else {
@@ -1296,7 +1301,7 @@ function updateAllocationStatus() {
     });
 }
 
-// 儲存分派結果至後端
+// 5. 儲存分派結果至後端
 async function saveProductAllocation() {
     if (!currentProductId) return;
 
@@ -1305,7 +1310,7 @@ async function saveProductAllocation() {
     const payload = {
         actual_stock: actualStock,
         allocations: currentOrdersData.map(order => ({
-            order_no: order.order_no, // 改用 order_no
+            order_no: order.order_no,
             is_allocated: order.is_allocated ? true : false
         }))
     };
@@ -1323,6 +1328,7 @@ async function saveProductAllocation() {
         if (result.success) {
             alert('到貨分派儲存成功！');
             closeDetailModal();
+            loadProducts(); // 重新整理商品列表數據
         } else {
             alert(`儲存失敗：${result.message || '未知錯誤'}`);
         }
@@ -1332,7 +1338,7 @@ async function saveProductAllocation() {
     }
 }
 
-// 關閉預購人明細彈窗
+// 6. 關閉預購人明細彈窗
 function closeDetailModal() {
     const modal = document.getElementById('detailModal');
     if (modal) {
@@ -1342,6 +1348,7 @@ function closeDetailModal() {
 }
 
 
+        
         function promptDate(badgeId, textPrefix) {
             let date = prompt("請選擇/輸入日期 (格式 YYYY-MM-DD)：", "2026-10-15");
             if (date) {

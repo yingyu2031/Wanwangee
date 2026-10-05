@@ -1148,8 +1148,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染預購人明細表格內容     
-// 2. 渲染表格內容（成交與已分派訂單打勾，成交狀態反灰鎖定）        
+// 2. 渲染預購人明細表格內容            
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1271,6 +1270,7 @@ function handleCheckboxChange(index) {
 }
 
 // 4. 更新畫面上狀態文字與控管 Checkbox 是否能點選
+// 4. 更新畫面上狀態文字與控管 Checkbox 是否能點選
 function updateAllocationStatus() {
     const actualStock = parseInt(document.getElementById('actualStockInput').value) || 0;
     
@@ -1293,13 +1293,16 @@ function updateAllocationStatus() {
     checkboxes.forEach((cb, index) => {
         const order = currentOrdersData[index];
         
-        // 成交狀態強制保持鎖定與反灰
+        // 💡 關鍵修復：成交狀態不僅要鎖定與反灰，還要強制確保它是打勾的！
         if (order.status === '成交') {
-            cb.disabled = true;
-            cb.closest('tr').classList.add('opacity-40');
+            cb.checked = true;           // 強制勾選
+            order.is_allocated = true;   // 同步記憶體狀態
+            cb.disabled = true;          // 鎖定不可點
+            cb.closest('tr').classList.add('opacity-40'); // 反灰
             return;
         }
-        // 達量不可選
+
+        // 一般交易中訂單的達量不可選控管
         const itemQty = Number(order.quantity) || 0;
         if (!order.is_allocated && (allocatedQty + itemQty > actualStock)) {
             cb.disabled = true;

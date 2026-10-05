@@ -92,7 +92,8 @@ const initDB = async () => {
         payment_status VARCHAR(50) DEFAULT 'unpaid',
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
-        memo TEXT DEFAULT ''
+        memo TEXT DEFAULT '',
+        is_allocated BOOLEAN DEFAULT FALSE
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (
@@ -405,33 +406,85 @@ app.post('/api/products/:id/allocate', async (req, res) => {
 });
 
 
-app.patch('/api/orders/:order_id/status', async (req, res) => {
-  try {
-    const { shipping_status, payment_status, memo } = req.body;
-    const orderId = req.params.order_id;
+// 到貨與出貨對帳名單明細api
+app.get('/api/orders', async (req, res) => {
+    try {
+        const { status = 'trading', keyword = '' } = req.query;
 
-    const orderRes = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
-    if (orderRes.rows.length === 0) return res.status(404).json({ success: false, message: '找不到訂單' });
-    const order = orderRes.rows[0];
+        let query = `
+            SELECT o.*, u.nickname AS buyer_name, u.uid AS buyer_uid, p.name AS product_name
+            FROM orders o
+            JOIN users u ON o.uid = u.uid
+            JOIN products p ON o.product_id = p.id
+            WHERE o.status = $1 AND o.is_allocated = TRUE
+        `;
+        let params = [status];
 
-    const newShippingStatus = shipping_status || order.shipping_status;
-    const newPaymentStatus = payment_status || order.payment_status;
-    const newMemo = memo !== undefined ? memo : order.memo;
-    const shippingDate = (shipping_status === 'shipped' && order.shipping_status !== 'shipped') ? new Date() : order.shipping_date;
-    const paymentDate = (payment_status === 'paid' && order.payment_status !== 'paid') ? new Date() : order.payment_date;
+        if (keyword) {
+            query += ` AND (u.nickname ILIKE $2 OR p.name ILIKE $2 OR o.order_no ILIKE $2 OR p.name ILIKE $2)`;
+            params.push(`%${keyword}%`);
+        }
 
-    const updateQuery = `
-      UPDATE orders 
-      SET shipping_status = $1, payment_status = $2, memo = $3, shipping_date = $4, payment_date = $5
-      WHERE id = $6
-      RETURNING *;
-    `;
-    const updateRes = await pool.query(updateQuery, [newShippingStatus, newPaymentStatus, newMemo, shippingDate, paymentDate, orderId]);
+        query += ` ORDER BY o.order_time DESC`;
 
-    res.json({ success: true, data: updateRes.rows[0] });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+        const result = await pool.query(query, params);
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
+
+// 更新出貨、收款日期
+app.patch('/api/orders/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { type, status, date } = req.json || req.body; 
+        // type 可以是 'shipping' 或 'payment'
+
+        let query = '';
+        let params = [];
+
+        if (type === 'shipping') {
+            query = `UPDATE orders SET shipping_status = $1, shipping_date = $2 WHERE id = $3 RETURNING *`;
+            params = [status, date || new Date(), id];
+        } else if (type === 'payment') {
+            query = `UPDATE orders SET payment_status = $1, payment_date = $2 WHERE id = $3 RETURNING *`;
+            params = [status, date || new Date(), id];
+        } else {
+            return res.status(400).json({ success: false, message: '無效的更新類型' });
+        }
+
+        const result = await pool.query(query, params);
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: '找不到該訂單' });
+        }
+
+        res.json({ success: true, data: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
+
+// 更新訂單備註
+app.patch('/api/orders/:id/memo', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { memo } = req.body;
+
+        const query = `UPDATE orders SET memo = $1 WHERE id = $2 RETURNING *`;
+        const result = await pool.query(query, [memo, id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: '找不到該訂單' });
+        }
+
+        res.json({ success: true, data: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
 });
 
 

@@ -304,19 +304,25 @@
     </div>
 
 
-    <!-- 3. 客戶取消改派專用彈窗 -->
-    <div id="reassignModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
-            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
-                <h3 class="text-sm font-bold text-brandYellow">🔄 訂單取消與名額改派</h3>
-                <button onclick="closeReassignModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
-            </div>
-            <p class="text-zinc-300" id="cancelTargetText">已取消該買家的名額，請選擇要將此名額「改派」給哪位候補預購人：</p>
-            <button onclick="confirmReassign()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition shadow text-xs">
-                確認改派並發送 LINE 通知
-            </button>
+    <!-- 改派名額彈窗 (隱藏狀態) -->
+<div id="reassignModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-lg w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-white">🔄 訂單取消與名額改派</h3>
+            <button onclick="closeReassignModal()" class="text-zinc-400 hover:text-white">&times;</button>
+        </div>
+        
+        <p id="cancelTargetText" class="text-sm text-zinc-300 mb-4"></p>
+        
+        <!-- 這裡是用來動態塞入候補名單單選按鈕的容器 -->
+        <div id="candidateListContainer" class="max-h-60 overflow-y-auto mb-6"></div>
+        
+        <div class="flex space-x-3">
+            <button onclick="submitReassign()" class="flex-1 bg-brandYellow text-black font-bold py-2 rounded hover:bg-yellow-500">確認執行</button>
+            <button onclick="closeReassignModal()" class="flex-1 bg-zinc-800 text-white font-bold py-2 rounded hover:bg-zinc-700">取消</button>
         </div>
     </div>
+</div>
 
 <!-- 4. 預購人明細與到貨分派彈窗 -->
 <div id="detailModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
@@ -813,7 +819,7 @@ function renderOrdersTable(orders) {
                     <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
                 </td>
                 <td class="p-3 text-right">
-                    <button onclick="cancelAndReassign('${buyerDisplayName}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">客人取消(改派)</button>
+                    <button onclick="cancelAndReassign('${buyerDisplayName}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>
                 </td>
             </tr>
         `;
@@ -1224,7 +1230,7 @@ function renderAllocationTable() {
                                         class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'} ${pointerLockClass}"
                                         data-index="${index}"
                                         value="1"
-                                        ${isChecked}${isCompleted ? 'onclick="return false;" tabindex="-1"' : ''}
+                                        ${isChecked} ${isCompleted ? 'onclick="return false;" tabindex="-1"' : ''}
                                         onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>
@@ -1381,29 +1387,107 @@ function closeDetailModal() {
         }
 
         function resendNotification(customer) {
-            if(confirm(`確定要再次發送 LINE 到貨通知給 [${customer}] 嗎？`)) {
-                alert(`已成功再次發送通知！`);
+            if(confirm(`此功能尚未完成`)) {
+                alert(`敬請期待`);
             }
         }
 
-        function cancelAndReassign(customer) {
-            document.getElementById('cancelTargetText').innerText = `已取消 [${customer}] 的名額，請選擇要將此名額「改派」給哪位候補預購人：`;
-            document.getElementById('reassignModal').classList.remove('hidden');
-            document.getElementById('reassignModal').classList.add('flex');
-        }
+        // 全域變數暫存改派資訊
+let currentCancelOrderId = null;
 
-        function closeReassignModal() {
-            document.getElementById('reassignModal').classList.remove('flex');
-            document.getElementById('reassignModal').classList.add('hidden');
-        }
+// 1. 開啟改派彈窗並載入候補名單
+async function cancelAndReassign(orderId, customer, productId) {
+    currentCancelOrderId = orderId;
+    
+    const modal = document.getElementById('reassignModal');
+    const titleText = document.getElementById('cancelTargetText');
+    const candidateContainer = document.getElementById('candidateListContainer'); // 顯示候補名單的區塊
+    
+    titleText.innerText = `已取消 [${customer}] 的名額，請選擇要將此名額「改派」給哪位候補預購人：`;
+    candidateContainer.innerHTML = '<p class="text-zinc-500 text-sm py-2">載入候補名單中...</p>';
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 
-        function confirmReassign() {
-            alert(`已成功將名額改派給新買家，並自動發送 LINE 通知！`);
+    try {
+        // 呼叫該商品的訂單明細
+        const res = await fetch(`${API_BASE_URL}/api/products/${productId}/orders`);
+        const result = await res.json();
+
+        if (result.success) {
+            // 篩選出「未分派」且「非取消狀態」的訂單作為候補名單
+            const candidates = result.data.filter(o => !o.is_allocated && o.status !== '取消');
+            
+            if (candidates.length === 0) {
+                candidateContainer.innerHTML = '<p class="text-brandYellow text-sm py-2">目前沒有其他候補預購人。送出後將僅取消該名額。</p>';
+            } else {
+                // 渲染單選按鈕 (Radio Buttons)
+                candidateContainer.innerHTML = candidates.map(candidate => `
+                    <label class="flex items-center space-x-3 p-2 hover:bg-zinc-800 rounded cursor-pointer border border-zinc-700 mb-2">
+                        <input type="radio" name="reassignCandidate" value="${candidate.id}" class="w-4 h-4 accent-brandYellow">
+                        <div class="text-zinc-300 text-sm">
+                            <span class="font-bold text-white">${candidate.line_nickname || '*'}</span>
+                            <span class="text-xs text-zinc-500 ml-2">(${candidate.order_time ? candidate.order_time.replace('T', ' ').substring(5, 16) : ''})</span>
+                            <div class="text-brandYellow text-xs mt-1">預購數量：${candidate.quantity}</div>
+                        </div>
+                    </label>
+                `).join('');
+            }
+        }
+    } catch (err) {
+        candidateContainer.innerHTML = '<p class="text-red-400 text-sm py-2">載入候補名單失敗，請關閉後重試。</p>';
+    }
+}
+
+// 2. 關閉彈窗
+function closeReassignModal() {
+    document.getElementById('reassignModal').classList.remove('flex');
+    document.getElementById('reassignModal').classList.add('hidden');
+    currentCancelOrderId = null;
+}
+
+// 3. 確認送出改派結果
+async function submitReassign() {
+    if (!currentCancelOrderId) return;
+
+    // 取得選中的候補對象 ID (若無候補對象則為 null)
+    const selectedRadio = document.querySelector('input[name="reassignCandidate"]:checked');
+    const reassignOrderId = selectedRadio ? selectedRadio.value : null;
+
+    const confirmMsg = reassignOrderId 
+        ? '確定要取消舊名額並改派給選中的預購人嗎？' 
+        : '目前未選擇候補人，將僅取消該名額。確定執行？';
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders/reassign`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                cancelOrderId: currentCancelOrderId,
+                reassignOrderId: reassignOrderId
+            })
+        });
+
+        const result = await res.json();
+        
+        if (result.success) {
+            alert('名額處理成功！');
             closeReassignModal();
+            // 如果此彈窗是包在對帳明細裡，請呼叫重新載入明細的函式，例如：
+            // openDetailModal(currentProductId, currentProductName);
+        } else {
+            alert(`處理失敗：${result.message}`);
         }
+    } catch (err) {
+        console.error('改派連線錯誤:', err);
+        alert('伺服器連線失敗');
+    }
+}
 
         function batchNotifyLine() {
-            alert('已成功批次發送 LINE 通知給已勾選的買家！');
+            alert('此功能尚未完成，敬請期待！');
         }
 
     </script>

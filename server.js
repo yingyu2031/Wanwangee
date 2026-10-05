@@ -545,27 +545,45 @@ app.patch('/api/admin/orders/:id/memo', async (req, res) => {
 });
 
 
-// 客戶取消訂單與改派 (將 is_allocated 設為 false，並將 status 改為中文「取消」)
-app.patch('/api/admin/orders/:id/cancel', async (req, res) => {
+// 取消訂單並將名額改派給其他候補預購人
+app.patch('/api/admin/orders/reassign', async (req, res) => {
+    const client = await pool.connect();
     try {
-        const { id } = req.params;
+        const { cancelOrderId, reassignOrderId } = req.body;
+        
+        await client.query('BEGIN'); // 開啟交易
 
-        const query = `
+        // 1. 將原本的訂單標記為取消、解除分派，並清空出貨/收款狀態
+        const cancelQuery = `
             UPDATE orders 
             SET is_allocated = FALSE, status = '取消', shipping_status = '未寄出', payment_status = '未收款'
-            WHERE id = $1 
+            WHERE id = $1
             RETURNING *;
         `;
-        const result = await pool.query(query, [id]);
+        const cancelRes = await client.query(cancelQuery, [cancelOrderId]);
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ success: false, message: '找不到該訂單' });
+        if (cancelRes.rowCount === 0) {
+            throw new Error('找不到要取消的訂單');
         }
 
-        res.json({ success: true, data: result.rows[0], message: '訂單已成功取消並解除分派' });
+        // 2. 如果有選擇改派對象，則將其標記為已分派
+        if (reassignOrderId) {
+            const reassignQuery = `
+                UPDATE orders 
+                SET is_allocated = TRUE, status = '交易中'
+                WHERE id = $1;
+            `;
+            await client.query(reassignQuery, [reassignOrderId]);
+        }
+
+        await client.query('COMMIT'); // 提交交易
+        res.json({ success: true, message: '改派成功！' });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: '伺服器錯誤' });
+        await client.query('ROLLBACK'); // 若有報錯，倒退所有更改
+        console.error('改派失敗:', err);
+        res.status(500).json({ success: false, message: err.message || '伺服器錯誤' });
+    } finally {
+        client.release();
     }
 });
 

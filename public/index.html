@@ -797,7 +797,7 @@ function renderOrdersTable(orders) {
                     <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
                 </td>
                 <td class="p-3 text-right">
-                    <button onclick="cancelAndReassign('${buyerDisplayName}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>
+                    <button onclick="cancelAndReassign(${id}, '${buyerDisplayName}', ${o.product_id})" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>
                 </td>
             </tr>
         `;
@@ -1453,8 +1453,9 @@ async function submitReassign() {
         if (result.success) {
             alert('名額處理成功！');
             closeReassignModal();
-            // 如果此彈窗是包在對帳明細裡，請呼叫重新載入明細的函式，例如：
-            // openDetailModal(currentProductId, currentProductName);
+            if (typeof loadOrders === 'function') {
+                loadOrders(currentStatus || '交易中');
+            }
         } else {
             alert(`處理失敗：${result.message}`);
         }

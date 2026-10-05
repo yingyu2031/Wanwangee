@@ -382,19 +382,31 @@ app.post('/api/products/:id/allocate', async (req, res) => {
             [actual_stock, productId]
         );
 
-        // 2. 檢查總勾選人數是否超過 actual_stock（後端嚴格防呆）
-        const checkedCount = allocations.filter(item => item.is_allocated).length;
-        if (checkedCount > actual_stock) {
-            return res.status(400).json({ success: false, message: '勾選分派人數大於實際到貨量！' });
+        // 2. 檢查總勾選數量是否超過 actual_stock（後端嚴格防呆）
+        const checkedQty = allocations
+            .filter(item => item.is_allocated)
+            .reduce((sum, item) => sum + (Number(item.quantity) || 1), 0);
+            
+        if (checkedQty > actual_stock) {
+            return res.status(400).json({ success: false, message: '勾選分派的總數量大於實際到貨量！' });
         }
 
-        // 3. 批次更新各個訂單的 is_allocated 欄位 (改用 order_no 對應)
+        // 3. 批次更新各個訂單的 is_allocated 與 status
         if (allocations && Array.isArray(allocations)) {
             for (const item of allocations) {
-                await pool.query(
-                    'UPDATE orders SET is_allocated = $1 WHERE order_no = $2',
-                    [item.is_allocated, item.order_no]
-                );
+                if (item.is_allocated) {
+                    // 勾選分派時：is_allocated 設為 true，同時將狀態改為「交易中」
+                    await pool.query(
+                        'UPDATE orders SET is_allocated = TRUE, status = \'交易中\' WHERE order_no = $1',
+                        [item.order_no]
+                    );
+                } else {
+                    // 未勾選或取消分派時：is_allocated 設為 false
+                    await pool.query(
+                        'UPDATE orders SET is_allocated = FALSE WHERE order_no = $1',
+                        [item.order_no]
+                    );
+                }
             }
         }
 
@@ -404,7 +416,6 @@ app.post('/api/products/:id/allocate', async (req, res) => {
         res.status(500).json({ success: false, message: '資料庫更新失敗' });
     }
 });
-
 
 // 到貨與出貨對帳名單明細api
 app.get('/api/admin/orders', async (req, res) => {
@@ -523,6 +534,8 @@ app.patch('/api/admin/orders/:id/memo', async (req, res) => {
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });
+
+
 // 客戶取消訂單與改派 (將 is_allocated 設為 false，並將 status 改為中文「取消」)
 app.patch('/api/admin/orders/:id/cancel', async (req, res) => {
     try {

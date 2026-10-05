@@ -60,6 +60,7 @@ const initDB = async () => {
       CREATE TABLE IF NOT EXISTS products (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
+        category_id INT REFERENCES categories(id) ON DELETE SET NULL,
         image_url TEXT DEFAULT '',
         year_month VARCHAR(20) NOT NULL,
         quota INT NOT NULL,
@@ -94,6 +95,11 @@ const initDB = async () => {
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
         memo TEXT DEFAULT ''
+      );
+
+      CREATE TABLE IF NOT EXISTS categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (

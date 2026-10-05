@@ -99,7 +99,7 @@
             <input type="text" id="filterYearInput" value="2026" placeholder="輸入年份 (例如: 2026)" oninput="onYearInputChange()" class="bg-brandYellow text-brandBlack font-black text-xs rounded-xl py-2 px-4 shadow-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 w-full sm:w-64 text-center">
         </div>
         <div class="flex items-center space-x-2 w-full sm:w-auto">
-            <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
+            <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
         </div>
     </div>
 
@@ -131,7 +131,7 @@
     <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
 
     <!-- 搜尋框：手機版全寬，電腦版靠右對齊並保持適當寬度 -->
-        <div class="w-full sm:ml-auto sm:w-80 mb-4">
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
             <input type="text" id="orderSearchKeyword" placeholder="搜尋商品名稱或預購人..." oninput="filterOrders()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
         </div>
 

@@ -208,6 +208,19 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+// 取得所有分類的 API
+app.get('/api/categories', async (req, res) => {
+    try {
+        // 從資料庫撈出 id 和 name，並依據 id 排序
+        const result = await pool.query('SELECT id, name FROM categories ORDER BY id ASC');
+        
+        // 將結果以 JSON 格式回傳給前端
+        res.json(result.rows);
+    } catch (err) {
+        console.error('獲取分類失敗:', err.message);
+        res.status(500).json({ error: '伺服器錯誤' });
+    }
+});
 
 // --- 3. 商品與預購專案 API ---
 app.get('/api/products', async (req, res) => {

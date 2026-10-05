@@ -72,7 +72,8 @@ const initDB = async () => {
         need_deposit BOOLEAN DEFAULT FALSE,
         deposit_amount NUMERIC(10, 2) DEFAULT 0,
         memo TEXT DEFAULT '',
-        status VARCHAR(50) DEFAULT 'pre_ordering'
+        status VARCHAR(50) DEFAULT 'pre_ordering',
+        actual_stock INT DEFAULT 0
       );
 
       CREATE TABLE IF NOT EXISTS orders (
@@ -92,7 +93,7 @@ const initDB = async () => {
         payment_status VARCHAR(50) DEFAULT 'unpaid',
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
-        memo TEXT DEFAULT '',
+        memo TEXT DEFAULT ''
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (
@@ -446,25 +447,17 @@ app.get('/api/admin/orders', async (req, res) => {
                    u.real_name, 
                    u.line_nickname, 
                    p.name AS product_name,
-                   CASE 
-                       WHEN o.status = 'trading' THEN '交易中'
-                       WHEN o.status = 'completed' THEN '成交'
-                       WHEN o.status = 'cancelled' THEN '取消'
-                       ELSE o.status
-                   END AS status_zh
+                   o.status AS status_zh
             FROM orders o
             JOIN users u ON o.uid = u.uid
             JOIN products p ON o.product_id = p.id
-            WHERE (o.status = $1 OR 
-                   (o.status = 'trading' AND $1 = '交易中') OR 
-                   (o.status = 'completed' AND $1 = '成交') OR 
-                   (o.status = 'cancelled' AND $1 = '取消'))
+            WHERE o.status = $1 
               AND o.is_allocated = TRUE
         `;
         let params = [status];
 
         if (keyword) {
-            query += ` AND (u.nickname ILIKE $2 OR p.name ILIKE $2 OR o.order_no ILIKE $2 OR p.name ILIKE $2)`;
+            query += ` AND (u.line_nickname ILIKE $2 OR p.name ILIKE $2 OR o.order_no ILIKE $2)`;
             params.push(`%${keyword}%`);
         }
 
@@ -477,7 +470,6 @@ app.get('/api/admin/orders', async (req, res) => {
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });
-
 
 // 更新出貨或收款狀態
 app.patch('/api/admin/orders/:id/status', async (req, res) => {

@@ -450,7 +450,8 @@ app.get('/api/admin/orders', async (req, res) => {
             WHERE o.status = $1 
               AND o.status IS NOT NULL 
               AND o.status != ''
-              AND o.is_allocated = TRUE
+              /* 💡 關鍵修復：如果是取消狀態，就不強求 is_allocated 必須為 TRUE */
+              AND (o.is_allocated = TRUE OR o.status = '取消')
         `;
         let params = [status];
 

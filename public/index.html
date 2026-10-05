@@ -1178,7 +1178,7 @@ function renderAllocationTable() {
                         const realName = order.real_name || '*';
                         const isChecked = order.is_allocated ? 'checked' : '';
                         
-                        // 判斷是否為成交狀態（成交不允許取消勾選，需反灰）
+                        // 關鍵：如果狀態是「成交」，強制鎖定 (disabled) 並反灰，不允許取消勾選
                         const isCompleted = (order.status === '成交');
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';

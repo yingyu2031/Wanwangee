@@ -105,15 +105,15 @@
     </div>
 
     <!-- 2. 書籤與內頁的總包裹容器 -->
-    <div class="relative pt-2">
+    <div class="relative">
         
-        <!-- 月份頁籤列（貼齊在總容器的頂部） -->
+        <!-- 月份頁籤列（放在最上層 z-10） -->
         <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10" id="monthTabsContainer">
             <!-- 透過 JS 動態生成書籤式月份按鈕 -->
         </div>
 
-        <!-- 3. 內頁主容器：使用較大的負邊距 (-mt-4) 往上延伸，完美消除與頁籤間的縫隙 -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-4 pt-6">
+        <!-- 3. 內頁主容器：改用 -mt-2，讓它剛好貼住頁籤底部而不覆蓋 -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
             
             <!-- 上架新商品按鈕 -->
             <button onclick="openProductModal()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black px-4 py-3 rounded-xl transition shadow-md whitespace-nowrap text-center flex items-center justify-center space-x-1">
@@ -128,59 +128,68 @@
     </div>
 </div>
         <!-- ================= 區塊 B：到貨與出貨管理名單 ================= -->
-    <div id="fulfillmentSection" class="space-y-4 hidden">
+   <div id="fulfillmentSection" class="space-y-4 hidden">
     <!-- 外層大容器：模仿一本打開的訂單帳本或專案夾 -->
     <div class="bg-zinc-950 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
 
-        <!-- 1. 上方工具與子分頁列 -->
-        <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl space-y-4 shadow-xl">
-            <!-- 搜尋框 -->
-            <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
-
-            <!-- 狀態子分頁 -->
-           <!-- 狀態子分頁（書籤式活頁標籤） -->
-            <div class="flex items-end space-x-1 border-b border-zinc-800 px-2 pt-2 text-xs font-bold overflow-x-auto">
-                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500">交易中 (4)</button>
-                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">成交 (0)</button>
-                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2.5 rounded-t-lg transition border-t border-x border-zinc-800">取消 (0)</button>
-            </div>
-        </div>
-
-        <!-- 2. 主內頁容器 -->
-        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-1">
+        <!-- 1. 上方工具與書籤式子分頁總包裹容器 -->
+        <div class="relative">
             
-            <!-- 批次群發 LINE 通知按鈕 -->
-            <button onclick="batchNotifyLine()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-3 rounded-xl transition shadow-md flex items-center justify-center space-x-1">
-                <span>批次群發 LINE 通知</span>
-            </button>
-
-            <!-- 橫列表格呈現區塊 -->
-            <div class="border border-zinc-800 rounded-xl overflow-hidden shadow-md">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs whitespace-nowrap">
-                        <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800">
-                            <tr>
-                                <th class="p-3 sticky-col-1">預購人</th>
-                                <th class="p-3">商品名稱</th>
-                                <th class="p-3 text-center">數量</th>
-                                <th class="p-3">寄出註記</th>
-                                <th class="p-3">收款註記</th>
-                                <th class="p-3">上次通知紀錄</th>
-                                <th class="p-3">備註</th>
-                                <th class="p-3 text-right">操作</th>
-                            </tr>
-                        </thead>
-                        <!-- 移除寫死的 tr，完全交由 JavaScript 的 loadOrders 動態渲染 -->
-                        <tbody id="ordersTableBody" class="divide-y divide-zinc-800 text-zinc-300">
-                            <tr>
-                                <td colspan="8" class="p-6 text-center text-zinc-500">資料載入中...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <!-- 狀態子分頁（書籤式活頁標籤：貼齊頂部並往上浮動） -->
+            <div class="flex items-end space-x-1 px-4 scrollbar-none relative z-10 overflow-x-auto">
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-5 py-2.5 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
+                    交易中 (4)
+                </button>
+                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
+                    成交 (0)
+                </button>
+                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
+                    取消 (0)
+                </button>
             </div>
 
+            <!-- 2. 主內頁容器：使用 -mt-2 與頁籤完美無縫銜接 -->
+            <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-6 space-y-4 shadow-inner -mt-2 pt-5">
+                
+                <!-- 搜尋框 -->
+                <div>
+                    <input type="text" placeholder="搜尋商品名稱或預購人..." class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full focus:outline-none focus:border-brandYellow">
+                </div>
+
+                <!-- 批次群發 LINE 通知按鈕 -->
+                <button onclick="batchNotifyLine()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-3 rounded-xl transition shadow-md flex items-center justify-center space-x-1">
+                    <span>批次群發 LINE 通知</span>
+                </button>
+
+                <!-- 橫列表格呈現區塊 -->
+                <div class="border border-zinc-800 rounded-xl overflow-hidden shadow-md">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs whitespace-nowrap">
+                            <thead class="bg-zinc-950 text-zinc-400 border-b border-zinc-800">
+                                <tr>
+                                    <th class="p-3 sticky-col-1">預購人</th>
+                                    <th class="p-3">商品名稱</th>
+                                    <th class="p-3 text-center">數量</th>
+                                    <th class="p-3">寄出註記</th>
+                                    <th class="p-3">收款註記</th>
+                                    <th class="p-3">上次通知紀錄</th>
+                                    <th class="p-3">備註</th>
+                                    <th class="p-3 text-right">操作</th>
+                                </tr>
+                            </thead>
+                            <!-- 透過 JavaScript 的 loadOrders 動態渲染 -->
+                            <tbody id="ordersTableBody" class="divide-y divide-zinc-800 text-zinc-300">
+                                <tr>
+                                    <td colspan="8" class="p-6 text-center text-zinc-500">資料載入中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
+
     </div>
 </div>
 
@@ -604,7 +613,7 @@ function switchSubTab(status) {
 }
         
         // 載入訂單 API
-     async function loadOrders(status) {
+   async function loadOrders(status) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/orders?status=${status}`);
         const result = await res.json();
@@ -616,9 +625,11 @@ function switchSubTab(status) {
                 const buyerDisplayName = o.real_name || '未填寫';
                 const lineNick = o.line_nickname || '未知';
                 
-                // 判斷狀態文字來決定顏色標籤
-                const isShipped = o.shipping_status === '已寄出';
-                const isPaid = o.payment_status === '已收款';
+                // 判斷中文狀態來決定顏色標籤
+                const shipStatus = o.shipping_status || '未寄出';
+                const payStatus = o.payment_status || '未收款';
+                const isShipped = (shipStatus === '已寄出' || shipStatus === 'shipped');
+                const isPaid = (payStatus === '已收款' || payStatus === 'paid');
 
                 return `
                     <tr>
@@ -631,17 +642,17 @@ function switchSubTab(status) {
                         <td class="p-3">
                             <div class="flex items-center space-x-2">
                                 <span id="shipBadge${id}" class="${isShipped ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
-                                    ${o.shipping_status || '未寄出'}
+                                    ${isShipped ? '已寄出' : '未寄出'}
                                 </span>
-                                <button onclick="promptDate('shipBadge${id}', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
+                                <button onclick="updateOrderStatus(${id}, 'shipping', '已寄出')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">出貨</button>
                             </div>
                         </td>
                         <td class="p-3">
                             <div class="flex items-center space-x-2">
                                 <span id="payBadge${id}" class="${isPaid ? 'text-green-400' : 'text-red-400'} font-bold text-[11px]">
-                                    ${o.payment_status || '未收款'}
+                                    ${isPaid ? '已收款' : '未收款'}
                                 </span>
-                                <button onclick="promptDate('payBadge${id}', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
+                                <button onclick="updateOrderStatus(${id}, 'payment', '已收款')" class="bg-zinc-800 hover:bg-zinc-700 text-white px-2.5 py-1 rounded text-[10px] border border-zinc-700 font-bold">收款</button>
                             </div>
                         </td>
                         <td class="p-3 text-zinc-400 font-mono text-[11px]">
@@ -649,7 +660,7 @@ function switchSubTab(status) {
                             <button onclick="resendNotification('${buyerDisplayName}')" class="ml-1 bg-zinc-800 hover:bg-zinc-700 text-brandYellow px-2 py-0.5 rounded text-[10px] font-bold">通知</button>
                         </td>
                         <td class="p-3">
-                            <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
+                            <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
                         </td>
                         <td class="p-3 text-right">
                             <button onclick="cancelAndReassign('${buyerDisplayName}')" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">客人取消(改派)</button>
@@ -662,10 +673,39 @@ function switchSubTab(status) {
         }
     } catch (err) {
         console.error('載入訂單失敗:', err);
-        const tbody = document.getElementById('ordersTableBody');
-        if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-red-400">載入資料發生錯誤</td></tr>';
+    }
+}
+
+        // 點擊出貨或收款按鈕時呼叫
+async function updateOrderStatus(id, type, statusValue) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: type, status: statusValue, date: new Date().toISOString() })
+        });
+        const result = await res.json();
+        if (result.success) {
+            // 重新載入當前分頁資料以即時更新畫面與狀態
+            loadOrders(currentStatus || '交易中');
+        } else {
+            alert('更新失敗: ' + result.message);
         }
+    } catch (err) {
+        console.error('更新狀態發生錯誤:', err);
+    }
+}
+
+// 修改備註失焦或變更時呼叫
+async function updateOrderMemo(id, memoValue) {
+    try {
+        await fetch(`${API_BASE_URL}/api/admin/orders/${id}/memo`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ memo: memoValue })
+        });
+    } catch (err) {
+        console.error('更新備註發生錯誤:', err);
     }
 }
         
@@ -697,7 +737,8 @@ function switchSubTab(status) {
         }
 
   
-    
+
+        
  // 宣告全域變數：用來記錄目前正在編輯的商品 ID (null 代表是「新增」)
 let currentEditId = null;
 

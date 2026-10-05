@@ -677,6 +677,29 @@ function updateTradingTabCount(ordersList) {
     }
 }
         
+// 客戶取消
+async function cancelAndReassign(orderId, customerName) {
+    if (!confirm(`確定要取消 [${customerName}] 的訂單並進行改派嗎？`)) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders/${orderId}/cancel`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await res.json();
+
+        if (result.success) {
+            alert(`已成功將 [${customerName}] 的訂單狀態改為取消！`);
+            loadOrders(currentStatus || '交易中'); // 重新載入列表
+        } else {
+            alert('操作失敗: ' + result.message);
+        }
+    } catch (err) {
+        console.error('取消訂單發生錯誤:', err);
+        alert('網路連線或伺服器錯誤');
+    }
+}
+        
 // 5. 載入訂單 API (含載入中與 MM-DD 日期格式化)
 let cachedOrdersData = [];
 
@@ -1083,48 +1106,6 @@ let currentProductId = null;
 let currentOrdersData = [];
 
 // 開啟預購人明細與到貨分派彈窗
-async function openDetailModal(productId, productName) {
-    currentProductId = productId;
-    const modal = document.getElementById('detailModal');
-    const title = document.getElementById('detailModalTitle');
-    const content = document.getElementById('detailModalContent');
-    const actualStockInput = document.getElementById('actualStockInput');
-
-    title.innerText = `到貨分派與預購明細：${productName || '商品'}`;
-    content.innerHTML = '<p class="text-center text-zinc-500 py-4">載入中...</p>';
-    actualStockInput.value = 0;
-
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    try {
-        const [productRes, ordersRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/products/${productId}`),
-            fetch(`${API_BASE_URL}/api/products/${productId}/orders`)
-        ]);
-
-        const productResult = await productRes.json();
-        const ordersResult = await ordersRes.json();
-
-        if (productResult.success) {
-            actualStockInput.value = productResult.data.actual_stock || 0;
-        }
-
-        if (ordersResult.success) {
-            currentOrdersData = ordersResult.data || [];
-            renderAllocationTable();
-        } else {
-            content.innerHTML = '<p class="text-center text-red-400 py-6">載入明細失敗</p>';
-        }
-    } catch (err) {
-        console.error('取得資料錯誤:', err);
-        content.innerHTML = '<p class="text-center text-red-400 py-6">伺服器連線失敗</p>';
-    }
-}
-
-// 渲染表格內容
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1145,6 +1126,7 @@ function renderAllocationTable() {
                         <th class="p-2">下單時間</th>
                         <th class="p-2">暱稱 (姓名)</th>
                         <th class="p-2 text-center">數量</th>
+                        <th class="p-2 text-center">狀態</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1154,6 +1136,16 @@ function renderAllocationTable() {
                         const realName = order.real_name || '*';
                         const isChecked = order.is_allocated ? 'checked' : '';
                         
+                        // 根據真實的 status 決定顏色與文字：交易中=黃字，成交=綠字，取消=紅字，空白=-
+                        let statusBadge = '<span class="text-zinc-500">-</span>';
+                        if (order.status === '交易中') {
+                            statusBadge = '<span class="text-brandYellow font-bold">交易中</span>';
+                        } else if (order.status === '成交') {
+                            statusBadge = '<span class="text-green-400 font-bold">成交</span>';
+                        } else if (order.status === '取消') {
+                            statusBadge = '<span class="text-red-400 font-bold">取消</span>';
+                        }
+
                         return `
                             <tr class="border-b border-zinc-800/55 hover:bg-zinc-800/30 transition">
                                 <td class="p-2 text-center">
@@ -1168,6 +1160,7 @@ function renderAllocationTable() {
                                 <td class="p-2 text-zinc-400 whitespace-nowrap">${timeStr}</td>
                                 <td class="p-2 font-bold text-white">${nickname} <span class="text-[10px] text-zinc-500">(${realName})</span></td>
                                 <td class="p-2 text-center text-brandYellow font-bold">${order.quantity}</td>
+                                <td class="p-2 text-center text-xs">${statusBadge}</td>
                             </tr>
                         `;
                     }).join('')}

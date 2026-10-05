@@ -1157,7 +1157,7 @@ async function openDetailModal(productId, productName) {
     }
 }
 
-// 2. 渲染預購人明細表格內容            
+// 2. 渲染預購人明細表格內容                       
 function renderAllocationTable() {
     const content = document.getElementById('detailModalContent');
     
@@ -1187,8 +1187,12 @@ function renderAllocationTable() {
                         const nickname = order.line_nickname || '*';
                         const realName = order.real_name || '*';
                         
+                        // 直接使用 status === '成交' 
                         const isCompleted = (order.status === '成交');
-                        const isChecked = order.is_allocated ? 'checked' : '';
+                        
+                        // 只要狀態是成交，或資料庫本身是 is_allocated，就打勾
+                        const isChecked = (isCompleted || order.is_allocated) ? 'checked' : '';
+                        
                         const disabledAttr = isCompleted ? 'disabled' : '';
                         const rowOpacityClass = isCompleted ? 'opacity-40' : '';
 

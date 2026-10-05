@@ -96,7 +96,7 @@
     <!-- 1. 年份與搜尋列 -->
     <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
         <div class="w-full sm:w-auto">
-            <input type="text" id="filterYearInput" value="2026" placeholder="輸入年份 (例如: 2026)" oninput="onYearInputChange()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none focus:border-brandYellow w-full sm:w-64">
+            <input type="text" id="filterYearInput" value="2026" placeholder="輸入年份 (例如: 2026)" oninput="onYearInputChange()" class="bg-brandYellow text-brandBlack font-black text-xs rounded-xl py-2 px-4 shadow-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 w-full sm:w-64 text-center">
         </div>
         <div class="flex items-center space-x-2 w-full sm:w-auto">
             <input type="text" id="searchKeyword" placeholder="輸入品名關鍵字搜尋..." oninput="loadProducts()" class="bg-zinc-800 border border-zinc-700 text-xs rounded-xl p-2.5 text-white w-full sm:w-64 focus:outline-none focus:border-brandYellow">
@@ -140,13 +140,13 @@
             
             <!-- 狀態子分頁（書籤式活頁標籤） -->
             <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10">
-                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-brandYellow text-brandBlack px-4 py-2 rounded-t-xl transition shadow-md -translate-y-1 z-10 border-t border-x border-yellow-500 font-bold text-xs">
+                <button onclick="switchSubTab('交易中')" id="subTabTrading" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
                     交易中 (0)
                 </button>
-                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
+                <button onclick="switchSubTab('成交')" id="subTabCompleted" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
                     成交
                 </button>
-                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-t-lg transition border-t border-x border-zinc-800 font-bold text-xs">
+                <button onclick="switchSubTab('取消')" id="subTabCancelled" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out">
                     取消
                 </button>
             </div>
@@ -472,7 +472,7 @@ function initMonthTabs() {
             : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700 font-bold rounded-t-xl rounded-b-none py-2 px-4 opacity-80 hover:opacity-100';
 
         html += `
-            <button onclick="selectMonthTab('${ymValue}')" class="text-xs whitespace-nowrap transition-all duration-200 text-center ${activeClass}">
+            <button onclick="selectMonthTab('${ymValue}')" class="bg-zinc-900 text-zinc-400 hover:text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap text-center transition-all duration-300 ease-in-out ${activeClass}">
                 ${i} 月
             </button>
         `;

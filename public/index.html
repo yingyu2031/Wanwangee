@@ -304,22 +304,30 @@
     </div>
 
 
-    <!-- 改派名額彈窗 (隱藏狀態) -->
-<div id="reassignModal" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/70">
-    <div class="bg-zinc-900 border border-zinc-700 rounded-lg w-full max-w-md p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-white">🔄 訂單取消與名額改派</h3>
-            <button onclick="closeReassignModal()" class="text-zinc-400 hover:text-white">&times;</button>
+<!-- 改派名額彈窗 (隱藏狀態) -->
+<div id="reassignModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 max-w-md w-full shadow-2xl space-y-3 text-xs">
+        <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+            <h3 class="text-sm font-bold text-brandYellow">🔄 訂單取消與名額改派</h3>
+            <button onclick="closeReassignModal()" class="text-zinc-400 hover:text-white text-lg font-bold">&times;</button>
         </div>
         
-        <p id="cancelTargetText" class="text-sm text-zinc-300 mb-4"></p>
+        <!-- 說明文字區塊 -->
+        <div class="bg-zinc-800/50 p-3 rounded-xl border border-zinc-700/50">
+            <p id="cancelTargetText" class="text-xs text-zinc-300 font-medium leading-relaxed"></p>
+        </div>
         
         <!-- 這裡是用來動態塞入候補名單單選按鈕的容器 -->
-        <div id="candidateListContainer" class="max-h-60 overflow-y-auto mb-6"></div>
+        <div id="candidateListContainer" class="max-h-60 overflow-y-auto space-y-2"></div>
         
-        <div class="flex space-x-3">
-            <button onclick="submitReassign()" class="flex-1 bg-brandYellow text-black font-bold py-2 rounded hover:bg-yellow-500">確認執行</button>
-            <button onclick="closeReassignModal()" class="flex-1 bg-zinc-800 text-white font-bold py-2 rounded hover:bg-zinc-700">取消</button>
+        <!-- 按鈕區塊 -->
+        <div class="flex gap-2 pt-2">
+            <button onclick="submitReassign()" class="flex-1 bg-brandYellow hover:bg-yellow-500 text-zinc-950 font-bold py-2.5 rounded-xl transition shadow-lg">
+                確認執行
+            </button>
+            <button onclick="closeReassignModal()" class="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-2.5 rounded-xl transition">
+                取消
+            </button>
         </div>
     </div>
 </div>
@@ -797,7 +805,10 @@ function renderOrdersTable(orders) {
                     <input type="text" value="${o.memo || ''}" placeholder="輸入備註..." onchange="updateOrderMemo(${id}, this.value)" class="bg-zinc-800 border border-zinc-700 text-white text-[11px] rounded px-2 py-1 w-32 focus:outline-none focus:border-brandYellow">
                 </td>
                 <td class="p-3 text-right">
-                    <button onclick="cancelAndReassign(${id}, '${buyerDisplayName}', ${o.product_id})" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>
+                    ${o.status === '取消' 
+                        ? `<span class="text-zinc-600 font-bold text-[10px]">已取消</span>`
+                        : `<button onclick="cancelAndReassign(${id}, '${buyerDisplayName}', ${o.product_id})" class="bg-red-500/10 text-red-400 hover:bg-red-500/20 px-2 py-1 rounded border border-red-500/30 text-[10px] font-bold">取消</button>`
+                    }
                 </td>
             </tr>
         `;

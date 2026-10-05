@@ -1200,7 +1200,8 @@ function renderAllocationTable() {
                                         type="checkbox" 
                                         class="allocation-checkbox w-4 h-4 accent-brandYellow rounded ${isCompleted ? 'cursor-not-allowed' : 'cursor-pointer'}"
                                         data-index="${index}"
-                                        ${isChecked}${disabledAttr}
+                                        ${isChecked}
+                                        ${isCompleted ? 'disabled' : ''} 
                                         onchange="handleCheckboxChange(${index})"
                                     />
                                 </td>

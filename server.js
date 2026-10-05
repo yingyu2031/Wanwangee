@@ -85,7 +85,7 @@ const initDB = async () => {
         deposit_paid NUMERIC(10, 2) DEFAULT 0,
         balance_amount NUMERIC(10, 2) DEFAULT 0,
         order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        status VARCHAR(50) DEFAULT 'trading',
+        status VARCHAR(50) DEFAULT '',
         is_allocated BOOLEAN DEFAULT FALSE,
         shipping_status VARCHAR(50) DEFAULT 'unshipped',
         shipping_date TIMESTAMP,
@@ -523,7 +523,29 @@ app.patch('/api/admin/orders/:id/memo', async (req, res) => {
         res.status(500).json({ success: false, message: '伺服器錯誤' });
     }
 });
+// 客戶取消訂單與改派 (將 is_allocated 設為 false，並將 status 改為中文「取消」)
+app.patch('/api/admin/orders/:id/cancel', async (req, res) => {
+    try {
+        const { id } = req.params;
 
+        const query = `
+            UPDATE orders 
+            SET is_allocated = FALSE, status = '取消', shipping_status = '未寄出', payment_status = '未收款'
+            WHERE id = $1 
+            RETURNING *;
+        `;
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: '找不到該訂單' });
+        }
+
+        res.json({ success: true, data: result.rows[0], message: '訂單已成功取消並解除分派' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
 
 
 

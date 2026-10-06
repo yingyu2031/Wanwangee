@@ -567,6 +567,24 @@ app.patch('/api/admin/orders/reassign', async (req, res) => {
 });
 
 
+router.delete('/api/admin/orders/:order_no', async (req, res) => {
+    const { order_no } = req.params;
+    
+    try {
+        // 直接刪除訂單，透過 SQL 將名額釋放
+        const result = await pool.query('DELETE FROM orders WHERE order_no = $1 RETURNING *', [order_no]);
+        
+        if (result.rows.length > 0) {
+            res.json({ success: true, message: '訂單已成功刪除，名額已釋放' });
+        } else {
+            res.status(404).json({ success: false, message: '找不到該訂單' });
+        }
+    } catch (err) {
+        console.error('刪除訂單發生錯誤:', err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
+
 // ==========================================
 // 前台：下單與個人訂單 API
 // ==========================================

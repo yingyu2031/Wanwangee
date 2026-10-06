@@ -529,28 +529,31 @@
         // ==========================================
         // 6. 我的訂單渲染
         // ==========================================
-   async function loadMyOrders() {
-    const container = document.getElementById('myOrdersContainer');
+ async function loadMyOrders() {
+    const uid = document.getElementById('lineUid')?.value || currentUID;
+    const container = document.getElementById('myOrdersContainer'); 
+    if (!container || !uid) return;
+    
     container.innerHTML = "<p class='text-zinc-500 py-6 text-center'>載入訂單中...</p>";
 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/users/${currentUID}/orders`);
+        const res = await fetch(`${API_BASE_URL}/api/users/${uid}/orders`);
         const result = await res.json();
 
         if (result.success && result.data.length > 0) {
             container.innerHTML = result.data.map(o => {
-                // 💡 動態判斷按鈕狀態
+                // 💡 動態判斷按鈕狀態與條件
                 let actionButton = '';
                 if (o.status === '預購中') {
-                    // 預購中：顯示灰色取消預購按鈕
-                    actionButton = `<button onclick="cancelMyOrder('${o.order_no}')" class="bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-bold px-4 py-1.5 rounded-lg transition shadow">取消預購</button>`;
-                } else if (o.status === '交易中') {
-                    // 交易中：顯示橘色賣貨便按鈕
-                    actionButton = `<button onclick="openMaihuobian('${o.order_no}')" class="bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition shadow">賣貨便</button>`;
+                    // 取消預購按鈕：狀態必須是「預購中」
+                    actionButton = `<button onclick="cancelMyOrder('${o.order_no}')" class="bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-[10px] font-bold px-3 py-1.5 rounded transition shadow mt-2">取消預購</button>`;
+                } else if (o.status === '交易中' && o.shipping_status === '已寄出') {
+                    // 賣貨便按鈕：狀態必須是「交易中」且寄出狀態為「已寄出」
+                    actionButton = `<button onclick="openMaihuobian('${o.order_no}')" class="bg-orange-500 hover:bg-orange-400 text-white text-[10px] font-bold px-3 py-1.5 rounded transition shadow mt-2">賣貨便</button>`;
                 }
 
                 return `
-                <div class="bg-[#1f1f23] border border-zinc-800 rounded-2xl p-4 shadow-lg mb-4 relative overflow-hidden flex flex-col">
+                <div class="bg-[#1f1f23] border border-zinc-800 rounded-2xl p-4 shadow-lg mb-4 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1 h-full ${o.status === '取消' ? 'bg-zinc-600' : 'bg-brandYellow'}"></div>
                     <div class="flex justify-between items-start pl-2">
                         <div>
@@ -559,13 +562,17 @@
                             <p class="text-xs text-zinc-400 mt-1">數量: <span class="text-white">${o.quantity}</span> | 總金額: <span class="text-white">NT$ ${parseFloat(o.total_amount).toLocaleString()}</span></p>
                             <p class="text-[10px] text-zinc-500 mt-1">下單時間: ${new Date(o.order_time).toLocaleString()}</p>
                         </div>
-                        <div class="text-right text-xs">
-                            <p class="text-zinc-500 mb-0.5">訂單狀態</p>
-                            <span class="${o.status === '取消' ? 'text-zinc-500' : (o.status === '成交' ? 'text-green-400' : 'text-brandYellow')} font-bold">${o.status}</span>
+                        
+                        <!-- 💡 右側區塊：改為 flex-col 排列，讓按鈕直接顯示在狀態下方 -->
+                        <div class="text-right text-xs flex flex-col items-end">
+                            <div>
+                                <p class="text-zinc-500 mb-0.5">訂單狀態</p>
+                                <span class="${o.status === '取消' ? 'text-zinc-500' : (o.status === '成交' ? 'text-green-400' : 'text-brandYellow')} font-bold">${o.status}</span>
+                            </div>
+                            <!-- 渲染按鈕 (如果有符合條件才會顯示) -->
+                            ${actionButton}
                         </div>
                     </div>
-                    <!-- 💡 操作按鈕區塊 (若有按鈕才顯示分隔線) -->
-                    ${actionButton ? `<div class="mt-3 pt-3 border-t border-zinc-800/50 flex justify-end pl-2">${actionButton}</div>` : ''}
                 </div>
                 `;
             }).join('');
@@ -577,7 +584,6 @@
         container.innerHTML = `<p class="text-red-400 text-center py-6">訂單載入失敗</p>`;
     }
 }
-
         // 客戶自行取消預購
 async function cancelMyOrder(orderNo) {
     if (!confirm('確定要取消這筆預購嗎？取消後將釋出名額。')) return;

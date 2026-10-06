@@ -431,7 +431,7 @@
                             : `<button onclick="openOrderModal(${p.id}, '${p.name}', ${p.pre_price}, ${p.deposit_amount}, ${p.is_limited}, ${p.limit_qty})" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-2.5 rounded-xl transition shadow-md mt-2">立即預購</button>`;
                         
                         const depositHtml = p.need_deposit ? `<p class="text-brandYellow font-bold">訂金: NT$ ${p.deposit_amount}</p>` : '';
-                        const limitHtml = p.is_limited ? `<span class="text-red-400 font-bold">(每人限購 ${p.limit_qty} 隻)</span>` : '';
+                        const limitHtml = p.is_limited ? `<span class="text-red-400 font-bold">(每人限購 ${p.limit_qty})</span>` : '';
 
                         return `
                         <div class="bg-[#1f1f23] border border-zinc-800/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-brandYellow/50 transition group">
@@ -474,7 +474,7 @@
             }
             
             const maxQty = isLimited ? limitQty : 5;
-            document.getElementById('modalLimitText').innerText = isLimited ? `⚠️ 系統限制每人最多購買 ${limitQty} 隻` : ''; //[cite: 3]
+            document.getElementById('modalLimitText').innerText = isLimited ? `⚠️ 系統限制每人最多購買 ${limitQty}` : ''; //[cite: 3]
             
             const qtySelect = document.getElementById('orderQty');
             qtySelect.innerHTML = '';

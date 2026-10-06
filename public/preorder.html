@@ -412,51 +412,54 @@
             }
         }
 
-        async function loadFrontendProducts() {
-            const categoryId = document.getElementById('categorySelect').value;
-            const container = document.getElementById('frontendProductsGrid');
-            container.innerHTML = "<p class='text-zinc-500 col-span-full text-center py-10'>商品載入中...</p>";
+     async function loadFrontendProducts() {
+    const categoryId = document.getElementById('categorySelect').value;
+    const container = document.getElementById('frontendProductsGrid');
+    container.innerHTML = "<p class='text-zinc-500 col-span-full text-center py-10'>商品載入中...</p>";
 
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/products?year_month=${currentSelectedMonth}&category_id=${categoryId}`);
-                const result = await res.json();
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/products?year_month=${currentSelectedMonth}&category_id=${categoryId}`);
+        const result = await res.json();
 
-                if (result.success && result.data.length > 0) {
-                    container.innerHTML = result.data.map(p => {
-                        const bookedQty = parseInt(p.qty || 0);
-                        const isSoldOut = bookedQty >= p.quota;
-                        
-                        const buttonHtml = isSoldOut 
-                            ? `<button disabled class="w-full bg-zinc-800 text-zinc-500 text-xs font-black py-2.5 rounded-xl transition mt-2 cursor-not-allowed">名額已滿 / 預購結束</button>`
-                            : `<button onclick="openOrderModal(${p.id}, '${p.name}', ${p.pre_price}, ${p.deposit_amount}, ${p.is_limited}, ${p.limit_qty})" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-2.5 rounded-xl transition shadow-md mt-2">立即預購</button>`;
-                        
-                        const depositHtml = p.need_deposit ? `<p class="text-brandYellow font-bold">訂金: NT$ ${p.deposit_amount}</p>` : '';
-                        const limitHtml = p.is_limited ? `<span class="text-red-400 font-bold">(每人限購 ${p.limit_qty})</span>` : '';
+        if (result.success && result.data.length > 0) {
+            container.innerHTML = result.data.map(p => {
+                const bookedQty = parseInt(p.qty || 0);
+                const isSoldOut = bookedQty >= p.quota;
+                
+                const buttonHtml = isSoldOut 
+                    ? `<button disabled class="w-full bg-zinc-800 text-zinc-500 text-xs font-black py-2.5 rounded-xl transition mt-2 cursor-not-allowed">名額已滿 / 預購結束</button>`
+                    : `<button onclick="openOrderModal(${p.id}, '${p.name}', ${p.pre_price}, ${p.deposit_amount}, ${p.is_limited}, ${p.limit_qty})" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-2.5 rounded-xl transition shadow-md mt-2">立即預購</button>`;
+                
+                // 💡 判斷是否需要訂金，並產生對應的 HTML 字串[cite: 3]
+                const depositHtml = p.need_deposit ? `<p class="text-brandYellow font-bold">訂金: NT$ ${p.deposit_amount.toLocaleString()}</p>` : '';
+                
+                // 💡 判斷是否有限購[cite: 3]
+                const limitHtml = p.is_limited ? `<span class="text-red-400 font-bold">(每人限購 ${p.limit_qty} 隻)</span>` : '';
 
-                        return `
-                        <div class="bg-[#1f1f23] border border-zinc-800/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-brandYellow/50 transition group">
-                            <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden relative border border-zinc-800 flex items-center justify-center">
-                                <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px] z-10">${p.year_month} 發售</span>
-                                ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">` : '<div class="text-zinc-500 text-xs">商品圖片預覽</div>'}
-                            </div>
-                            <div class="space-y-1.5 text-xs text-zinc-400">
-                                <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
-                                <p>定價: NT$ ${p.price} | <span class="text-white font-bold">預購價: NT$ ${p.pre_price}</span></p>
-                                ${depositHtml} ${limitHtml}
-                                <p class="pt-1 border-t border-zinc-800/50 mt-2">已預購/配額: <span class="text-white font-bold">${bookedQty} / ${p.quota} 組</span></p>
-                            </div>
-                            ${buttonHtml}
-                        </div>
-                        `;
-                    }).join('');
-                } else {
-                    container.innerHTML = `<p class="text-zinc-500 col-span-full text-center py-10">此分類或月份目前尚無發售商品</p>`;
-                }
-            } catch (err) {
-                container.innerHTML = `<p class="text-red-400 col-span-full text-center py-10">網路錯誤，無法載入商品</p>`;
-            }
+                return `
+                <div class="bg-[#1f1f23] border border-zinc-800/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-brandYellow/50 transition group">
+                    <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden relative border border-zinc-800 flex items-center justify-center">
+                        <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px] z-10">${p.year_month} 發售</span>
+                        ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">` : '<div class="text-zinc-500 text-xs">商品圖片預覽</div>'}
+                    </div>
+                    <div class="space-y-1.5 text-xs text-zinc-400">
+                        <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
+                        <p>定價: NT$ ${p.price.toLocaleString()} | <span class="text-white font-bold">預購價: NT$ ${p.pre_price.toLocaleString()}</span></p>
+                        <!-- 渲染訂金與限購資訊 -->
+                        ${depositHtml} ${limitHtml}
+                        <p class="pt-1 border-t border-zinc-800/50 mt-2">預購配額: <span class="text-white font-bold">${p.quota} 組</span></p>
+                    </div>
+                    ${buttonHtml}
+                </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = `<p class="text-zinc-500 col-span-full text-center py-10">此分類或月份目前尚無發售商品</p>`;
         }
-
+    } catch (err) {
+        container.innerHTML = `<p class="text-red-400 col-span-full text-center py-10">網路錯誤，無法載入商品</p>`;
+    }
+}
         // ==========================================
         // 5. 下單 Modal 與提交流程
         // ==========================================

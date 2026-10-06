@@ -584,27 +584,34 @@
         container.innerHTML = `<p class="text-red-400 text-center py-6">訂單載入失敗</p>`;
     }
 }
-        // 客戶自行取消預購
+       // 客戶自行取消預購 (直接刪除訂單釋出名額)
 async function cancelMyOrder(orderNo) {
-    if (!confirm('確定要取消這筆預購嗎？取消後將釋出名額。')) return;
+    if (!confirm('確定要取消這筆預購嗎？取消後將釋出該商品名額。')) return;
     
-    // 這裡替換成您後端對應的取消 API 路由
-    alert(`已送出取消申請，訂單編號: ${orderNo}`);
-    /* 
     try {
-        const res = await fetch(`${API_BASE_URL}/api/orders/${orderNo}/cancel`, { method: 'PATCH' });
+        // 呼叫後端的 DELETE 路由來刪除訂單
+        const res = await fetch(`${API_BASE_URL}/api/admin/orders/${orderNo}`, { 
+            method: 'DELETE' 
+        });
         const result = await res.json();
+        
         if (result.success) {
-            alert('已成功取消預購');
-            loadMyOrders(); // 重新載入訂單列表
-            loadFrontendProducts(); // 若需更新庫存
+            alert('已成功取消預購！');
+            loadMyOrders(); // 重新載入個人的訂單列表
+            
+            // 如果畫面上有商品列表，也一併更新以顯示最新庫存
+            if (typeof loadFrontendProducts === 'function') {
+                loadFrontendProducts(); 
+            }
+        } else {
+            alert(`取消失敗：${result.message}`);
         }
     } catch(err) {
-        alert('取消失敗，請稍後再試');
+        console.error('取消訂單錯誤:', err);
+        alert('取消失敗，請檢查網路連線或稍後再試');
     }
-    */
 }
-
+        
 // 導向賣貨便結帳/填單
 function openMaihuobian(orderNo) {
     // 這裡替換成您的賣貨便連結或是開啟填單彈窗

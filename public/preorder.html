@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wanwangee 玩玩具 - 預購商城</title>
+    <title>Wanwangee 玩玩具</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 LINE LIFF SDK -->
@@ -53,7 +53,7 @@
             </div>
         </div>
         <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner flex items-center space-x-2">
-            <span id="headerUserName">👑 載入中...</span>
+            <span id="headerUserName">載入中...</span>
             <span id="headerUserLevel" class="text-zinc-500 border-l border-zinc-700 pl-2">一般會員</span>
         </div>
     </header>
@@ -264,7 +264,7 @@
             if (pictureUrl) document.getElementById('lineAvatar').src = pictureUrl;
             
             // 渲染頂部 Header
-            document.getElementById('headerUserName').innerText = `👑 ${displayName}`;
+            document.getElementById('headerUserName').innerText = `${displayName}`;
 
             try {
                 // 檢查是否已綁定
@@ -526,39 +526,82 @@
         // ==========================================
         // 6. 我的訂單渲染
         // ==========================================
-        async function loadMyOrders() {
-            const container = document.getElementById('myOrdersContainer');
-            container.innerHTML = "<p class='text-zinc-500 py-6 text-center'>載入訂單中...</p>";
+   async function loadMyOrders() {
+    const container = document.getElementById('myOrdersContainer');
+    container.innerHTML = "<p class='text-zinc-500 py-6 text-center'>載入訂單中...</p>";
 
-            try {
-                const res = await fetch(`${API_BASE_URL}/api/users/${currentUID}/orders`);
-                const result = await res.json();
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/users/${currentUID}/orders`);
+        const result = await res.json();
 
-                if (result.success && result.data.length > 0) {
-                    container.innerHTML = result.data.map(o => `
-                        <div class="bg-[#1f1f23] border border-zinc-800 rounded-2xl p-4 shadow-lg mb-4 relative overflow-hidden">
-                            <div class="absolute top-0 left-0 w-1 h-full ${o.status === '取消' ? 'bg-zinc-600' : 'bg-brandYellow'}"></div>
-                            <div class="flex justify-between items-start pl-2">
-                                <div>
-                                    <span class="bg-zinc-800 text-brandYellow text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">#${o.order_no}</span>
-                                    <h3 class="text-sm font-bold text-white pt-2 ${o.status === '取消' ? 'line-through text-zinc-500' : ''}">${o.product_name}</h3>
-                                    <p class="text-xs text-zinc-400 mt-1">數量: <span class="text-white">${o.quantity}</span> | 總金額: <span class="text-white">NT$ ${parseFloat(o.total_amount).toLocaleString()}</span></p>
-                                    <p class="text-[10px] text-zinc-500 mt-1">下單時間: ${new Date(o.order_time).toLocaleString()}</p>
-                                </div>
-                                <div class="text-right text-xs">
-                                    <p class="text-zinc-500 mb-0.5">訂單狀態</p>
-                                    <span class="${o.status === '取消' ? 'text-zinc-500' : (o.status === '成交' ? 'text-green-400' : 'text-brandYellow')} font-bold">${o.status}</span>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    container.innerHTML = `<p class="text-zinc-500 text-center py-6">目前尚無預購紀錄</p>`;
+        if (result.success && result.data.length > 0) {
+            container.innerHTML = result.data.map(o => {
+                // 💡 動態判斷按鈕狀態
+                let actionButton = '';
+                if (o.status === '預購中') {
+                    // 預購中：顯示灰色取消預購按鈕
+                    actionButton = `<button onclick="cancelMyOrder('${o.order_no}')" class="bg-zinc-700 hover:bg-zinc-600 text-zinc-300 text-xs font-bold px-4 py-1.5 rounded-lg transition shadow">取消預購</button>`;
+                } else if (o.status === '交易中') {
+                    // 交易中：顯示橘色賣貨便按鈕
+                    actionButton = `<button onclick="openMaihuobian('${o.order_no}')" class="bg-orange-500 hover:bg-orange-400 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition shadow">賣貨便</button>`;
                 }
-            } catch (err) {
-                container.innerHTML = `<p class="text-red-400 text-center py-6">訂單載入失敗</p>`;
-            }
+
+                return `
+                <div class="bg-[#1f1f23] border border-zinc-800 rounded-2xl p-4 shadow-lg mb-4 relative overflow-hidden flex flex-col">
+                    <div class="absolute top-0 left-0 w-1 h-full ${o.status === '取消' ? 'bg-zinc-600' : 'bg-brandYellow'}"></div>
+                    <div class="flex justify-between items-start pl-2">
+                        <div>
+                            <span class="bg-zinc-800 text-brandYellow text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">#${o.order_no}</span>
+                            <h3 class="text-sm font-bold text-white pt-2 ${o.status === '取消' ? 'line-through text-zinc-500' : ''}">${o.product_name}</h3>
+                            <p class="text-xs text-zinc-400 mt-1">數量: <span class="text-white">${o.quantity}</span> | 總金額: <span class="text-white">NT$ ${parseFloat(o.total_amount).toLocaleString()}</span></p>
+                            <p class="text-[10px] text-zinc-500 mt-1">下單時間: ${new Date(o.order_time).toLocaleString()}</p>
+                        </div>
+                        <div class="text-right text-xs">
+                            <p class="text-zinc-500 mb-0.5">訂單狀態</p>
+                            <span class="${o.status === '取消' ? 'text-zinc-500' : (o.status === '成交' ? 'text-green-400' : 'text-brandYellow')} font-bold">${o.status}</span>
+                        </div>
+                    </div>
+                    <!-- 💡 操作按鈕區塊 (若有按鈕才顯示分隔線) -->
+                    ${actionButton ? `<div class="mt-3 pt-3 border-t border-zinc-800/50 flex justify-end pl-2">${actionButton}</div>` : ''}
+                </div>
+                `;
+            }).join('');
+        } else {
+            container.innerHTML = `<p class="text-zinc-500 text-center py-6">目前尚無預購紀錄</p>`;
         }
+    } catch (err) {
+        console.error("訂單載入失敗", err);
+        container.innerHTML = `<p class="text-red-400 text-center py-6">訂單載入失敗</p>`;
+    }
+}
+
+        // 客戶自行取消預購
+async function cancelMyOrder(orderNo) {
+    if (!confirm('確定要取消這筆預購嗎？取消後將釋出名額。')) return;
+    
+    // 這裡替換成您後端對應的取消 API 路由
+    alert(`已送出取消申請，訂單編號: ${orderNo}`);
+    /* 
+    try {
+        const res = await fetch(`${API_BASE_URL}/api/orders/${orderNo}/cancel`, { method: 'PATCH' });
+        const result = await res.json();
+        if (result.success) {
+            alert('已成功取消預購');
+            loadMyOrders(); // 重新載入訂單列表
+            loadFrontendProducts(); // 若需更新庫存
+        }
+    } catch(err) {
+        alert('取消失敗，請稍後再試');
+    }
+    */
+}
+
+// 導向賣貨便結帳/填單
+function openMaihuobian(orderNo) {
+    // 這裡替換成您的賣貨便連結或是開啟填單彈窗
+    alert(`即將導向賣貨便頁面... (訂單編號: ${orderNo})`);
+    // window.open('https://myship.7-11.com.tw/xxx', '_blank');
+}
     </script>
 </body>
 </html>

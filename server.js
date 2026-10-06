@@ -120,7 +120,7 @@ const initDB = async () => {
 initDB();
 
 // ==========================================
-// API 路由設計
+// 後台api
 // ==========================================
 
 
@@ -135,68 +135,6 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 
-
-// --- 2. 會員相關 API ---
-
-// 檢查會員綁定
-app.get('/api/users/check/:uid', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
-    
-    // 只要資料庫找得到這筆 UID，就直接視為已綁定過！
-    if (result.rows.length > 0) {
-      res.json({ success: true, bound: true, data: result.rows[0] });
-    } else {
-      res.json({ success: true, bound: false, data: null });
-    }
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// --- 會員註冊&更新資料 ---
-app.post('/api/users/bind', async (req, res) => {
-  try {
-    const { uid, line_nickname, real_name, phone, email, address, birthday, gender } = req.body;
-    
-    // 檢查前端是否有確實傳送必要欄位
-    if (!uid || !real_name || !phone) {
-      return res.status(400).json({ success: false, message: '缺少必要欄位 (uid, real_name, phone)' });
-    }
-
-    const query = `
-      INSERT INTO users (uid, line_nickname, real_name, phone, email, address, birthday, gender, join_date)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
-      ON CONFLICT (uid) 
-      DO UPDATE SET 
-        line_nickname = COALESCE($2, users.line_nickname),
-        real_name = COALESCE($3, users.real_name),
-        phone = COALESCE($4, users.phone),
-        email = COALESCE($5, users.email),
-        address = COALESCE($6, users.address),
-        birthday = COALESCE($7, users.birthday),
-        gender = COALESCE($8, users.gender)
-      RETURNING *;
-    `;
-    
-    const values = [
-      uid, 
-      line_nickname || '', 
-      real_name, 
-      phone, 
-      email || '', 
-      address || '', 
-      birthday || '', 
-      gender || '不透露'
-    ];
-    
-    const result = await pool.query(query, values);
-    res.json({ success: true, data: result.rows[0] });
-  } catch (err) {
-    console.error('會員綁定錯誤:', err);
-    res.status(500).json({ success: false, message: err.message });
-  }
-});
 
 // 後台取得所有會員清單
 app.get('/api/admin/users', async (req, res) => {
@@ -628,6 +566,170 @@ app.patch('/api/admin/orders/reassign', async (req, res) => {
     }
 });
 
+
+// ==========================================
+// 前台：下單與個人訂單 API
+// ==========================================
+
+
+
+// ---  會員相關 API ---
+
+// 檢查會員綁定
+app.get('/api/users/check/:uid', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE uid = $1', [req.params.uid]);
+    
+    // 只要資料庫找得到這筆 UID，就直接視為已綁定過！
+    if (result.rows.length > 0) {
+      res.json({ success: true, bound: true, data: result.rows[0] });
+    } else {
+      res.json({ success: true, bound: false, data: null });
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- 會員註冊&更新資料 ---
+app.post('/api/users/bind', async (req, res) => {
+  try {
+    const { uid, line_nickname, real_name, phone, email, address, birthday, gender } = req.body;
+    
+    // 檢查前端是否有確實傳送必要欄位
+    if (!uid || !real_name || !phone) {
+      return res.status(400).json({ success: false, message: '缺少必要欄位 (uid, real_name, phone)' });
+    }
+
+    const query = `
+      INSERT INTO users (uid, line_nickname, real_name, phone, email, address, birthday, gender, join_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+      ON CONFLICT (uid) 
+      DO UPDATE SET 
+        line_nickname = COALESCE($2, users.line_nickname),
+        real_name = COALESCE($3, users.real_name),
+        phone = COALESCE($4, users.phone),
+        email = COALESCE($5, users.email),
+        address = COALESCE($6, users.address),
+        birthday = COALESCE($7, users.birthday),
+        gender = COALESCE($8, users.gender)
+      RETURNING *;
+    `;
+    
+    const values = [
+      uid, 
+      line_nickname || '', 
+      real_name, 
+      phone, 
+      email || '', 
+      address || '', 
+      birthday || '', 
+      gender || '不透露'
+    ];
+    
+    const result = await pool.query(query, values);
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    console.error('會員綁定錯誤:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// 提交預購訂單 (含防呆邏輯：檢查限購、檢查總配額)
+app.post('/api/orders', async (req, res) => {
+    const { uid, product_id, quantity } = req.body;
+    
+    if (!uid || !product_id || !quantity) {
+        return res.status(400).json({ success: false, message: '缺少必要參數' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN'); // 開啟交易鎖定，避免超賣
+
+        // 檢查商品是否存在
+        const prodRes = await client.query('SELECT * FROM products WHERE id = $1 FOR UPDATE', [product_id]);
+        if (prodRes.rows.length === 0) {
+            throw new Error('找不到該商品');
+        }
+        const product = prodRes.rows[0];
+
+        // 檢查單次數量是否超過個人限購
+        if (product.is_limited && quantity > product.limit_qty) {
+            throw new Error(`超過限購數量 (每人限購 ${product.limit_qty} 組)`);
+        }
+
+        // 檢查該會員是否已經預購過 (歷史訂單 + 本次數量)
+        if (product.is_limited) {
+            const userOrdersRes = await client.query(`
+                SELECT SUM(quantity) as user_total 
+                FROM orders 
+                WHERE product_id = $1 AND uid = $2 AND status != '取消'
+            `, [product_id, uid]);
+            const userTotal = parseInt(userOrdersRes.rows[0].user_total || 0);
+            
+            if (userTotal + quantity > product.limit_qty) {
+                throw new Error(`您已預購過 ${userTotal} 組，加上本次數量將超過限購 ${product.limit_qty} 組的限制`);
+            }
+        }
+
+        // 檢查總配額是否已滿
+        const totalBookedRes = await client.query(`
+            SELECT SUM(quantity) as total_booked 
+            FROM orders 
+            WHERE product_id = $1 AND status != '取消'
+        `, [product_id]);
+        const totalBooked = parseInt(totalBookedRes.rows[0].total_booked || 0);
+        
+        if (totalBooked + quantity > product.quota) {
+            throw new Error(`抱歉，該商品預購名額不足 (剩餘 ${product.quota - totalBooked} 組)`);
+        }
+
+        // 計算金額
+        const total_amount = product.pre_price * quantity;
+        const deposit_paid = product.need_deposit ? (product.deposit_amount * quantity) : 0;
+        const balance_amount = total_amount - deposit_paid;
+        
+        // 產生訂單編號
+        const dateStr = new Date().toISOString().slice(0,10).replace(/-/g, '');
+        const order_no = `ORD-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const insertQuery = `
+            INSERT INTO orders (order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, status)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, order_no
+        `;
+        const result = await client.query(insertQuery, [
+            order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, '交易中'
+        ]);
+
+        await client.query('COMMIT');
+        res.json({ success: true, data: result.rows[0], message: '預購成功' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('下單失敗:', err);
+        res.status(400).json({ success: false, message: err.message || '下單失敗' });
+    } finally {
+        client.release();
+    }
+});
+
+//  取得個人的預購訂單清單
+app.get('/api/users/:uid/orders', async (req, res) => {
+    const { uid } = req.params;
+    try {
+        const query = `
+            SELECT o.*, p.name as product_name, p.image_url, p.year_month
+            FROM orders o
+            JOIN products p ON o.product_id = p.id
+            WHERE o.uid = $1
+            ORDER BY o.order_time DESC
+        `;
+        const result = await pool.query(query, [uid]);
+        res.json({ success: true, data: result.rows });
+    } catch (err) {
+        res.status(500).json({ success: false, message: '讀取訂單失敗' });
+    }
+});
 
 
 app.listen(PORT, () => {

@@ -89,9 +89,9 @@ const initDB = async () => {
         order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         status VARCHAR(50) DEFAULT '預購中',
         is_allocated BOOLEAN DEFAULT FALSE,
-        shipping_status VARCHAR(50) DEFAULT 'unshipped',
+        shipping_status VARCHAR(50) DEFAULT '未寄出',
         shipping_date TIMESTAMP,
-        payment_status VARCHAR(50) DEFAULT 'unpaid',
+        payment_status VARCHAR(50) DEFAULT '未收款',
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
         memo TEXT DEFAULT ''
@@ -699,7 +699,7 @@ app.post('/api/orders', async (req, res) => {
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, order_no
         `;
         const result = await client.query(insertQuery, [
-            order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, '交易中'
+            order_no, uid, product_id, quantity, total_amount, deposit_paid, balance_amount, '預購中'
         ]);
 
         await client.query('COMMIT');

@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wanwangee 玩玩具 - 預購商城</title>
+    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 LINE LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -17,11 +20,29 @@
             }
         }
     </script>
+    <style>
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
-<body class="bg-brandBlack text-white min-h-screen flex flex-col font-sans relative">
+<body class="bg-[#0f0f11] text-white min-h-screen flex flex-col font-sans relative">
+
+    <!-- 未加入會員彈跳視窗 (Modal) -->
+    <div id="registerModal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-brandYellow/10 text-brandYellow rounded-full flex items-center justify-center mx-auto text-xl font-black">
+                ⚠
+            </div>
+            <h3 class="text-lg font-black text-white">尚未加入 TOYHEART 會員</h3>
+            <p class="text-xs text-zinc-400">檢測到您的 LINE 帳號尚未完成實名與收件資料綁定，請點擊下方按鈕進行註冊以解鎖預購資格。</p>
+            <button onclick="forceToProfileTab()" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg">
+                立即填寫註冊資料
+            </button>
+        </div>
+    </div>
 
     <!-- 頂部導覽列 -->
-    <header class="bg-brandYellow text-brandBlack sticky top-0 z-40 p-4 shadow-md flex items-center justify-between">
+    <header class="bg-brandYellow text-brandBlack sticky top-0 z-50 p-4 shadow-md flex items-center justify-between">
         <div class="flex items-center space-x-2">
             <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
@@ -31,16 +52,17 @@
                 <h1 class="text-base font-black tracking-wider">TOYHEART MEMBER</h1>
             </div>
         </div>
-        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner flex items-center">
-            <span>👑 VIP 尊榮會員</span>
+        <div class="text-xs bg-brandBlack text-brandYellow px-3 py-1 rounded-full font-bold shadow-inner flex items-center space-x-2">
+            <span id="headerUserName">👑 載入中...</span>
+            <span id="headerUserLevel" class="text-zinc-500 border-l border-zinc-700 pl-2">一般會員</span>
         </div>
     </header>
 
     <!-- 主要內容區 -->
-    <main class="p-4 sm:p-6 max-w-5xl mx-auto w-full flex-grow space-y-6">
+    <main class="p-4 sm:p-6 max-w-6xl mx-auto w-full flex-grow space-y-4">
         
         <!-- 前台導覽頁籤 -->
-        <div class="flex space-x-3 border-b border-zinc-800 pb-3 overflow-x-auto scrollbar-none">
+        <div class="flex space-x-3 border-b border-zinc-800 pb-3 overflow-x-auto scrollbar-none sticky top-[72px] z-40 bg-[#0f0f11] pt-2">
             <button onclick="switchTab('products')" id="tabProducts" class="bg-brandYellow text-brandBlack px-5 py-2.5 rounded-xl text-xs font-black transition shadow whitespace-nowrap">
                 🔥 熱門預購商品
             </button>
@@ -54,119 +76,112 @@
 
         <!-- ================= 區塊 A：熱門預購商品 ================= -->
         <div id="productsSection" class="space-y-4">
-            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex justify-between items-center">
-                <h2 class="text-sm font-bold text-brandYellow">最新開放預購</h2>
-                <span class="text-xs text-zinc-400">2026/10 發售強檔</span>
+            <!-- 搜尋與過濾列 -->
+            <div class="bg-[#18181b] border border-zinc-800 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="w-full sm:w-auto">
+                    <!-- 年份顯示 (鎖定當年或由後端決定) -->
+                    <input type="text" value="2026" readonly class="bg-brandYellow text-brandBlack font-black text-xs rounded-xl py-2.5 px-8 shadow-lg focus:outline-none w-full sm:w-48 text-center cursor-default">
+                </div>
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto ml-auto">
+                    <!-- 分類下拉選單 -->
+                    <select id="categorySelect" class="bg-[#1f1f23] border border-zinc-800 text-xs rounded-xl p-2.5 text-zinc-300 focus:outline-none w-full sm:w-auto cursor-pointer">
+                        <option value="">全部分類</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <!-- 商品卡片範例 -->
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col justify-between space-y-4 shadow-xl hover:border-brandYellow transition duration-300">
-                    <div class="w-full h-56 bg-zinc-800 rounded-xl overflow-hidden border border-zinc-700 flex items-center justify-center relative group">
-                        <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px] z-10">2026-10 發售</span>
-                        <!-- 假圖片佔位 -->
-                        <div class="text-zinc-600 text-xs text-center">
-                            <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            商品圖片預覽
-                        </div>
+            <!-- 月份頁籤 -->
+            <div class="relative mt-2">
+                <div class="flex items-end space-x-1 overflow-x-auto px-4 scrollbar-none relative z-10" id="monthTabsContainer"></div>
+                <!-- 商品網格 -->
+                <div class="bg-[#18181b] border border-zinc-800 rounded-2xl p-4 sm:p-6 shadow-inner -mt-1 pt-6">
+                    <div id="frontendProductsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <p class='text-zinc-500 col-span-full text-center py-10'>商品載入中...</p>
                     </div>
-                    <div class="space-y-2 text-xs">
-                        <h3 class="text-base font-black text-white leading-snug">RX-93ff v GUNDAM Statue</h3>
-                        <p class="text-zinc-400 line-through">官方定價: NT$ 4,999</p>
-                        <p class="text-brandYellow font-black text-lg">預購價: NT$ 4,280</p>
-                        <div class="bg-zinc-950 p-2 rounded-lg border border-zinc-800 space-y-1 mt-2">
-                            <p class="text-zinc-300">需預付訂金: <span class="text-white font-bold">NT$ 1,500</span></p>
-                            <p class="text-red-400 font-bold">⚠️ 每人限購 2 隻</p>
-                        </div>
-                    </div>
-                    <button onclick="openOrderModal('RX-93ff v GUNDAM Statue', 4280, 1500, 2)" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-sm font-black py-3 rounded-xl transition shadow-lg mt-2">
-                        立即登記預購
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- ================= 區塊 B：我的訂單 ================= -->
         <div id="ordersSection" class="space-y-4 hidden">
-            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl">
+            <div class="bg-[#18181b] border border-zinc-800 p-4 rounded-2xl">
                 <h2 class="text-sm font-bold text-brandYellow mb-1">我的預購清單</h2>
-                <p class="text-xs text-zinc-400">請隨時留意您的信箱與 LINE 通知以獲取到貨資訊。</p>
+                <p class="text-xs text-zinc-400">請隨時留意您的信箱與 LINE 通知以獲取到貨與付款資訊。</p>
             </div>
-
-            <!-- 訂單卡片 -->
-            <div class="space-y-4">
-                <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-brandYellow"></div>
-                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center space-x-2">
-                                <span class="bg-zinc-800 text-brandYellow text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">訂單編號 #ORD-20260901</span>
-                                <span class="text-xs text-zinc-400">2026-09-01 12:30</span>
-                            </div>
-                            <h3 class="text-sm font-bold text-white pt-1">RX-93ff v GUNDAM Statue</h3>
-                            <p class="text-xs text-zinc-400">數量: <span class="text-white font-bold">1</span> | 總金額: <span class="text-white font-bold">NT$ 4,280</span></p>
-                        </div>
-                        
-                        <div class="bg-zinc-950 border border-zinc-800 p-3 rounded-xl flex flex-row sm:flex-col gap-4 sm:gap-2 text-xs text-center sm:text-right">
-                            <div>
-                                <span class="text-zinc-500 block text-[10px] mb-0.5">狀態</span>
-                                <span class="text-brandYellow font-bold">交易中</span>
-                            </div>
-                            <div>
-                                <span class="text-zinc-500 block text-[10px] mb-0.5">付款進度</span>
-                                <span class="text-green-400 font-bold">已收訂金</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- 訂單列表容器 -->
+            <div id="myOrdersContainer" class="space-y-4">
+                <p class='text-zinc-500 py-6 text-center'>載入訂單中...</p>
             </div>
         </div>
 
         <!-- ================= 區塊 C：會員資料綁定 ================= -->
         <div id="profileSection" class="space-y-4 hidden max-w-2xl mx-auto">
-            <div class="bg-zinc-900 border border-zinc-800 p-6 rounded-3xl shadow-xl space-y-6">
-                
-                <div class="text-center space-y-2 border-b border-zinc-800 pb-6">
-                    <div class="w-16 h-16 bg-brandYellow/10 text-brandYellow rounded-full flex items-center justify-center mx-auto text-3xl mb-2">
-                        📱
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-3xl shadow-xl flex items-center space-x-4">
+                <div class="relative flex-shrink-0">
+                    <img id="lineAvatar" src="https://via.placeholder.com/150" alt="LINE 頭像" class="w-16 h-16 rounded-full object-cover border-2 border-brandYellow">
+                    <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow border border-brandBlack">LINE</span>
+                </div>
+                <div class="flex-grow">
+                    <div class="flex items-center space-x-2">
+                        <h2 id="lineNickname" class="text-base font-black text-white tracking-wide">載入中...</h2>
+                        <span id="memberLevelTag" class="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">一般會員</span>
                     </div>
-                    <h2 class="text-lg font-black text-white">會員專屬資料綁定</h2>
-                    <p class="text-xs text-zinc-400 leading-relaxed">為了確保商品寄送與預購對帳無誤，請填寫您的真實姓名與常用資料。</p>
+                    <p id="lineUidDisplay" class="text-[11px] text-zinc-500 font-mono mt-0.5 truncate max-w-[200px]">UID: 讀取中...</p>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900 border border-zinc-800 p-5 rounded-2xl shadow-xl space-y-4">
+                <div class="border-b border-zinc-800 pb-3">
+                    <h3 class="text-sm font-bold text-brandYellow">📝 填寫收件與真實身分資料</h3>
+                    <p class="text-xs text-zinc-400 mt-1">為了確保商品寄送與預購對帳無誤，請填寫您的真實姓名與常用資料。</p>
                 </div>
 
-                <div class="space-y-4 text-sm">
-                    <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                <form id="registerForm" onsubmit="submitMemberData(event)" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">姓名 <span class="text-red-400">*</span></label>
+                        <input type="text" id="realName" required placeholder="請填寫真實姓名" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">手機號碼 <span class="text-red-400">*</span></label>
+                        <input type="tel" id="phone" required placeholder="例如：0912345678" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">電子信箱 (Email) <span class="text-red-400">*</span></label>
+                        <input type="email" id="email" required placeholder="例如：example@gmail.com" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">常用地址 <span class="text-red-400">*</span></label>
+                        <textarea id="address" required rows="2" placeholder="請填寫完整收件地址" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow"></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <p class="font-bold text-white text-xs mb-1">👑 綁定中心 LINE</p>
-                            <p class="text-green-400 text-[10px] font-bold">已成功綁定 (玩家小傑)</p>
+                            <label class="block text-zinc-400 mb-1">生日 (MM-DD)</label>
+                            <input type="text" id="birthday" placeholder="例如：10-15" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
                         </div>
-                        <button class="bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-lg text-xs font-bold cursor-not-allowed">已綁定</button>
+                        <div>
+                            <label class="block text-zinc-400 mb-1">性別</label>
+                            <select id="gender" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2.5 text-white focus:outline-none focus:border-brandYellow">
+                                <option value="不透露">不透露</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div>
-                        <label class="block text-zinc-400 text-xs mb-1">真實姓名 <span class="text-brandYellow">*</span></label>
-                        <input type="text" value="玩家小傑" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-brandYellow text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-zinc-400 text-xs mb-1">聯絡電話 <span class="text-brandYellow">*</span></label>
-                        <input type="tel" placeholder="0912-345-678" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-brandYellow text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-zinc-400 text-xs mb-1">收件地址 (含郵遞區號) <span class="text-brandYellow">*</span></label>
-                        <textarea rows="2" placeholder="請填寫完整收件地址" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-brandYellow text-xs"></textarea>
-                    </div>
+                    <input type="hidden" id="lineUid">
+                    <input type="hidden" id="lineNicknameHidden">
 
-                    <button class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3.5 rounded-xl transition shadow-lg mt-4">
-                        儲存會員資料
+                    <button type="submit" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack font-black py-3 rounded-xl transition text-sm shadow-lg mt-4">
+                        儲存 / 更新綁定資料
                     </button>
-                </div>
+                </form>
             </div>
         </div>
     </main>
 
-    <!-- 預購確認彈窗 (Modal) -->
+    <!-- 下單預購彈窗 (Modal) -->
     <div id="orderModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
+        <div class="bg-[#18181b] border border-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
             <div class="flex justify-between items-start border-b border-zinc-800 pb-3">
                 <div>
                     <h3 class="text-sm font-bold text-brandYellow">確認預購內容</h3>
@@ -175,22 +190,22 @@
                 <button onclick="closeOrderModal()" class="text-zinc-500 hover:text-white text-xl font-bold">&times;</button>
             </div>
             
-            <div class="space-y-3 text-xs bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            <div class="space-y-3 text-xs bg-[#1f1f23] p-4 rounded-xl border border-zinc-800">
                 <div class="flex justify-between items-center">
                     <span class="text-zinc-400">商品預購價</span>
                     <span id="modalPrice" class="font-bold text-white"></span>
                 </div>
-                <div class="flex justify-between items-center border-t border-zinc-800 pt-2">
+                <div id="depositContainer" class="flex justify-between items-center border-t border-zinc-800 pt-2">
                     <span class="text-brandYellow font-bold">需預付訂金</span>
                     <span id="modalDeposit" class="font-bold text-brandYellow text-sm"></span>
                 </div>
             </div>
 
+            <!-- 數量與限量防呆 -->
             <div class="space-y-1">
                 <label class="block text-zinc-400 text-xs mb-1">購買數量</label>
                 <select id="orderQty" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl p-3 text-white focus:outline-none focus:border-brandYellow text-sm font-bold cursor-pointer">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
+                    <!-- JS 動態寫入 -->
                 </select>
                 <p id="modalLimitText" class="text-[10px] text-red-400 pt-1 text-right"></p>
             </div>
@@ -201,15 +216,101 @@
         </div>
     </div>
 
-    <!-- 底部版權 -->
     <footer class="text-center py-6 text-[10px] text-zinc-600 border-t border-zinc-900 mt-auto">
-        &copy; 2026 Wanwangee 玩玩具. All Rights Reserved.<br>
-        UID: 9487-XYZ-123
+        &copy; 2026 TOYHEART Member System. All Rights Reserved.
     </footer>
 
+    <!-- 邏輯與 API 互動腳本 -->
     <script>
-        // 頁籤切換邏輯
+        const API_BASE_URL = "https://wanwangee.zeabur.app";
+        const MY_LIFF_ID = "2011841001-7yVwI75U"; 
+
+        // 全域狀態
+        let currentUID = "";
+        let isUserBound = false;
+        let currentSelectedMonth = "2026-11";
+        let currentOrderProductId = null;
+
+        // ==========================================
+        // 1. 系統初始化與 LIFF 驗證
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", function () {
+            initMonthTabs(); // 初始化月份按鈕
+
+            liff.init({ liffId: MY_LIFF_ID })
+                .then(() => {
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                    } else {
+                        liff.getProfile().then(profile => {
+                            setupUserData(profile.userId, profile.displayName, profile.pictureUrl);
+                        }).catch(err => console.error('取得 LINE Profile 失敗', err));
+                    }
+                })
+                .catch((err) => {
+                    console.log('LIFF 外部環境測試中', err);
+                    setupUserData("U_test_user_123", "測試玩家小傑", null);
+                });
+        });
+
+        async function setupUserData(uid, displayName, pictureUrl) {
+            currentUID = uid;
+            document.getElementById('lineUid').value = uid;
+            document.getElementById('lineNicknameHidden').value = displayName;
+            
+            // 渲染 Profile 頁籤的卡片
+            document.getElementById('lineNickname').innerText = displayName;
+            document.getElementById('lineUidDisplay').innerText = `UID: ${uid}`;
+            if (pictureUrl) document.getElementById('lineAvatar').src = pictureUrl;
+            
+            // 渲染頂部 Header
+            document.getElementById('headerUserName').innerText = `👑 ${displayName}`;
+
+            try {
+                // 檢查是否已綁定
+                const res = await fetch(`${API_BASE_URL}/api/users/check/${uid}`);
+                const result = await res.json();
+
+                if (result.success && result.bound) {
+                    isUserBound = true;
+                    const user = result.data;
+                    // 填入表單資料[cite: 2]
+                    document.getElementById('realName').value = user.real_name || '';
+                    document.getElementById('phone').value = user.phone || '';
+                    document.getElementById('email').value = user.email || '';
+                    document.getElementById('address').value = user.address || '';
+                    document.getElementById('birthday').value = user.birthday || '';
+                    document.getElementById('gender').value = user.gender || '不透露';
+                    if (user.member_level) {
+                        document.getElementById('memberLevelTag').innerText = user.member_level;
+                        document.getElementById('headerUserLevel').innerText = user.member_level;
+                    }
+                    
+                    // 已綁定，載入商品與訂單
+                    loadCategories();
+                    loadFrontendProducts();
+                    loadMyOrders();
+                } else {
+                    // 未綁定，強制跳轉要求填寫
+                    isUserBound = false;
+                    document.getElementById('registerModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('驗證失敗:', error);
+                document.getElementById('registerModal').classList.remove('hidden');
+            }
+        }
+
+        // ==========================================
+        // 2. 頁籤切換與強制填寫邏輯
+        // ==========================================
         function switchTab(tab) {
+            // 如果還沒綁定，不允許切換到商品或訂單頁
+            if (!isUserBound && tab !== 'profile') {
+                alert("請先完成會員資料綁定，才能解鎖預購功能！");
+                return;
+            }
+
             ['products', 'orders', 'profile'].forEach(t => {
                 document.getElementById(t + 'Section').classList.add('hidden');
                 const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -221,36 +322,149 @@
             activeBtn.className = "bg-brandYellow text-brandBlack px-5 py-2.5 rounded-xl text-xs font-black transition shadow whitespace-nowrap";
         }
 
-        // 開啟預購彈窗
-        function openOrderModal(name, price, deposit, limit) {
-            document.getElementById('modalProductName').innerText = name;
-            document.getElementById('modalPrice').innerText = 'NT$ ' + price.toLocaleString();
-            document.getElementById('modalDeposit').innerText = 'NT$ ' + deposit.toLocaleString();
-            document.getElementById('modalLimitText').innerText = `⚠️ 系統限制每人最多購買 ${limit} 組`;
-            
-            const qtySelect = document.getElementById('orderQty');
-            qtySelect.innerHTML = '';
-            for(let i=1; i<=limit; i++) {
-                qtySelect.innerHTML += `<option value="${i}">${i}</option>`;
+        function forceToProfileTab() {
+            document.getElementById('registerModal').classList.add('hidden');
+            switchTab('profile');
+        }
+
+        // ==========================================
+        // 3. 會員資料綁定/更新 API
+        // ==========================================
+        async function submitMemberData(event) {
+            event.preventDefault();
+
+            const memberData = {
+                uid: currentUID,
+                line_nickname: document.getElementById('lineNicknameHidden').value,
+                real_name: document.getElementById('realName').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                address: document.getElementById('address').value,
+                birthday: document.getElementById('birthday').value,
+                gender: document.getElementById('gender').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/users/bind`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(memberData)
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('會員資料更新成功！您現在可以開始預購商品了。');
+                    isUserBound = true;
+                    // 初次綁定成功後，自動載入商品並切換回首頁
+                    loadCategories();
+                    loadFrontendProducts();
+                    loadMyOrders();
+                    switchTab('products');
+                } else {
+                    alert('儲存失敗：' + (result.message || '未知錯誤'));
+                }
+            } catch (error) {
+                alert('連線伺服器失敗，請稍後再試。');
             }
-
-            document.getElementById('orderModal').classList.remove('hidden');
-            document.getElementById('orderModal').classList.add('flex');
         }
 
-        // 關閉預購彈窗
-        function closeOrderModal() {
-            document.getElementById('orderModal').classList.remove('flex');
-            document.getElementById('orderModal').classList.add('hidden');
+        // ==========================================
+        // 4. 商品與分類渲染邏輯
+        // ==========================================
+        function initMonthTabs() {
+            const container = document.getElementById('monthTabsContainer');
+            let html = '';
+            for (let i = 1; i <= 12; i++) {
+                const monthStr = i < 10 ? `0${i}` : `${i}`;
+                const ymValue = `2026-${monthStr}`;
+                const isActive = (ymValue === currentSelectedMonth);
+                
+                const activeClass = isActive 
+                    ? 'bg-brandYellow text-brandBlack font-black shadow-lg rounded-t-xl rounded-b-none py-2.5 px-5 z-10' 
+                    : 'bg-[#18181b] text-zinc-500 hover:text-white font-bold rounded-t-xl rounded-b-none py-2 px-4 transition-all opacity-80 hover:opacity-100';
+
+                html += `<button onclick="selectMonthTab('${ymValue}')" class="text-xs whitespace-nowrap text-center ${activeClass}">${i} 月</button>`;
+            }
+            container.innerHTML = html;
         }
 
-        // 送出訂單模擬
-        function submitOrder() {
-            const qty = document.getElementById('orderQty').value;
-            alert(`預購成功！已為您登記 ${qty} 筆名額，請留意後續訂金付款通知。`);
-            closeOrderModal();
-            switchTab('orders'); // 送出後自動切換到訂單頁
+        function selectMonthTab(ym) {
+            currentSelectedMonth = ym;
+            initMonthTabs();
+            loadFrontendProducts();
         }
-    </script>
-</body>
-</html>
+
+        async function loadCategories() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/categories`);
+                const result = await res.json();
+                const select = document.getElementById('categorySelect');
+                if (result.success || Array.isArray(result)) {
+                    const data = result.data || result; // 兼容不同回傳格式
+                    select.innerHTML = '<option value="">全部分類</option>';
+                    data.forEach(c => {
+                        select.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+                    });
+                    select.addEventListener('change', loadFrontendProducts);
+                }
+            } catch (err) {
+                console.error("分類載入失敗", err);
+            }
+        }
+
+        async function loadFrontendProducts() {
+            const categoryId = document.getElementById('categorySelect').value;
+            const container = document.getElementById('frontendProductsGrid');
+            container.innerHTML = "<p class='text-zinc-500 col-span-full text-center py-10'>商品載入中...</p>";
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/products?year_month=${currentSelectedMonth}&category_id=${categoryId}`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    container.innerHTML = result.data.map(p => {
+                        const bookedQty = parseInt(p.qty || 0);
+                        const isSoldOut = bookedQty >= p.quota;
+                        
+                        const buttonHtml = isSoldOut 
+                            ? `<button disabled class="w-full bg-zinc-800 text-zinc-500 text-xs font-black py-2.5 rounded-xl transition mt-2 cursor-not-allowed">名額已滿 / 預購結束</button>`
+                            : `<button onclick="openOrderModal(${p.id}, '${p.name}', ${p.pre_price}, ${p.deposit_amount}, ${p.is_limited}, ${p.limit_qty})" class="w-full bg-brandYellow hover:bg-yellow-400 text-brandBlack text-xs font-black py-2.5 rounded-xl transition shadow-md mt-2">立即預購</button>`;
+                        
+                        const depositHtml = p.need_deposit ? `<p class="text-brandYellow font-bold">訂金: NT$ ${p.deposit_amount}</p>` : '';
+                        const limitHtml = p.is_limited ? `<span class="text-red-400 font-bold">(每人限購 ${p.limit_qty} 隻)</span>` : '';
+
+                        return `
+                        <div class="bg-[#1f1f23] border border-zinc-800/50 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-lg hover:border-brandYellow/50 transition group">
+                            <div class="w-full h-48 bg-zinc-800 rounded-xl overflow-hidden relative border border-zinc-800 flex items-center justify-center">
+                                <span class="absolute top-2 left-2 bg-brandYellow text-brandBlack px-2 py-0.5 rounded font-bold text-[10px] z-10">${p.year_month} 發售</span>
+                                ${p.image_url ? `<img src="${p.image_url}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">` : '<div class="text-zinc-500 text-xs">商品圖片預覽</div>'}
+                            </div>
+                            <div class="space-y-1.5 text-xs text-zinc-400">
+                                <h3 class="text-sm font-bold text-white leading-snug">${p.name}</h3>
+                                <p>定價: NT$ ${p.price} | <span class="text-white font-bold">預購價: NT$ ${p.pre_price}</span></p>
+                                ${depositHtml} ${limitHtml}
+                                <p class="pt-1 border-t border-zinc-800/50 mt-2">已預購/配額: <span class="text-white font-bold">${bookedQty} / ${p.quota} 組</span></p>
+                            </div>
+                            ${buttonHtml}
+                        </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = `<p class="text-zinc-500 col-span-full text-center py-10">此分類或月份目前尚無發售商品</p>`;
+                }
+            } catch (err) {
+                container.innerHTML = `<p class="text-red-400 col-span-full text-center py-10">網路錯誤，無法載入商品</p>`;
+            }
+        }
+
+        // ==========================================
+        // 5. 下單 Modal 與提交流程
+        // ==========================================
+        function openOrderModal(id, name, price, deposit, isLimited, limitQty) {
+            currentOrderProductId = id;
+            document.getElementById('modalProductName').innerText = name;
+            document.getElementById('modalPrice').innerText = `NT$ ${price.toLocaleString()}`; //[cite: 3]
+            
+            const depositContainer = document.getElementById('depositContainer');
+            if (deposit > 0) {
+                depositContainer.style.display = 'flex';

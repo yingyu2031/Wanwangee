@@ -223,7 +223,7 @@
     <!-- 邏輯與 API 互動腳本 -->
     <script>
         const API_BASE_URL = "https://wanwangee.zeabur.app";
-        const MY_LIFF_ID = "2011841001-yi5z8Hcq"; 
+        const MY_LIFF_ID = "2011841001-7yVwI75U"; 
 
         // 全域狀態
         let currentUID = "";
@@ -468,3 +468,97 @@
             const depositContainer = document.getElementById('depositContainer');
             if (deposit > 0) {
                 depositContainer.style.display = 'flex';
+                document.getElementById('modalDeposit').innerText = `NT$ ${deposit.toLocaleString()}`; //[cite: 3]
+            } else {
+                depositContainer.style.display = 'none';
+            }
+            
+            const maxQty = isLimited ? limitQty : 5;
+            document.getElementById('modalLimitText').innerText = isLimited ? `⚠️ 系統限制每人最多購買 ${limitQty} 隻` : ''; //[cite: 3]
+            
+            const qtySelect = document.getElementById('orderQty');
+            qtySelect.innerHTML = '';
+            for(let i = 1; i <= maxQty; i++) {
+                qtySelect.innerHTML += `<option value="${i}">${i}</option>`;
+            }
+
+            document.getElementById('orderModal').classList.remove('hidden');
+            document.getElementById('orderModal').classList.add('flex');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('flex');
+            document.getElementById('orderModal').classList.add('hidden');
+            currentOrderProductId = null;
+        }
+
+        async function submitOrder() {
+            if (!currentOrderProductId || !currentUID) return;
+
+            const quantity = parseInt(document.getElementById('orderQty').value) || 1;
+            
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        uid: currentUID,
+                        product_id: currentOrderProductId,
+                        quantity: quantity
+                    })
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    alert(`預購成功！訂單編號: ${result.data.order_no}`);
+                    closeOrderModal();
+                    loadFrontendProducts(); // 刷新庫存與按鈕狀態
+                    loadMyOrders();         // 刷新個人訂單
+                    switchTab('orders');    // 導向我的訂單頁
+                } else {
+                    alert(`下單失敗：${result.message}`);
+                }
+            } catch (err) {
+                alert("下單失敗，請檢查網路連線");
+            }
+        }
+
+        // ==========================================
+        // 6. 我的訂單渲染
+        // ==========================================
+        async function loadMyOrders() {
+            const container = document.getElementById('myOrdersContainer');
+            container.innerHTML = "<p class='text-zinc-500 py-6 text-center'>載入訂單中...</p>";
+
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/users/${currentUID}/orders`);
+                const result = await res.json();
+
+                if (result.success && result.data.length > 0) {
+                    container.innerHTML = result.data.map(o => `
+                        <div class="bg-[#1f1f23] border border-zinc-800 rounded-2xl p-4 shadow-lg mb-4 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-1 h-full ${o.status === '取消' ? 'bg-zinc-600' : 'bg-brandYellow'}"></div>
+                            <div class="flex justify-between items-start pl-2">
+                                <div>
+                                    <span class="bg-zinc-800 text-brandYellow text-[10px] font-bold px-2 py-0.5 rounded border border-zinc-700">#${o.order_no}</span>
+                                    <h3 class="text-sm font-bold text-white pt-2 ${o.status === '取消' ? 'line-through text-zinc-500' : ''}">${o.product_name}</h3>
+                                    <p class="text-xs text-zinc-400 mt-1">數量: <span class="text-white">${o.quantity}</span> | 總金額: <span class="text-white">NT$ ${parseFloat(o.total_amount).toLocaleString()}</span></p>
+                                    <p class="text-[10px] text-zinc-500 mt-1">下單時間: ${new Date(o.order_time).toLocaleString()}</p>
+                                </div>
+                                <div class="text-right text-xs">
+                                    <p class="text-zinc-500 mb-0.5">訂單狀態</p>
+                                    <span class="${o.status === '取消' ? 'text-zinc-500' : (o.status === '成交' ? 'text-green-400' : 'text-brandYellow')} font-bold">${o.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = `<p class="text-zinc-500 text-center py-6">目前尚無預購紀錄</p>`;
+                }
+            } catch (err) {
+                container.innerHTML = `<p class="text-red-400 text-center py-6">訂單載入失敗</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

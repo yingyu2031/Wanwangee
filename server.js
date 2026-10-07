@@ -732,6 +732,26 @@ app.get('/api/users/:uid/orders', async (req, res) => {
     }
 });
 
+// --- 取消/刪除訂單 API (供前台客戶與後台管理員共用) ---
+app.delete('/api/admin/orders/:order_no', async (req, res) => {
+    try {
+        const { order_no } = req.params;
+        
+        // 執行刪除並回傳被刪除的資料
+        const result = await pool.query('DELETE FROM orders WHERE order_no = $1 RETURNING *', [order_no]);
+        
+        if (result.rows.length > 0) {
+            res.json({ success: true, message: '訂單已成功取消，名額已釋放' });
+        } else {
+            res.status(404).json({ success: false, message: '找不到該訂單' });
+        }
+    } catch (err) {
+        console.error('刪除訂單發生錯誤:', err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Wanwangee Server is running on port ${PORT}`);

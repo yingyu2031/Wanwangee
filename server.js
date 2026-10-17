@@ -26,23 +26,18 @@ app.use(express.static(path.join(__dirname, 'Public')));
 let dbUrl = process.env.DATABASE_URL || 'postgresql://root:123@localhost:5432/wanwangee';
 
 const pool = new Pool({
-  connectionString: dbUrl,
+  connectionString: process.env.DATABASE_URL,
   ssl: false,
   options: '-c timezone=Asia/Taipei'
 });
 
-pool.connect((err, client, release) => {
-  if (err) {
-    return console.error('Error acquiring PostgreSQL client:', err.stack);
-  }
-  console.log('PostgreSQL connected successfully to wanwangee_db');
-  release();
-});
-
-// 自動初始化資料庫表格
-const initDB = async () => {
+// ==========================================
+// 初始化資料庫
+// ==========================================
+async function initDatabase() {
+  const client = await pool.connect();
   try {
-    await pool.query(`
+    await client.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         uid VARCHAR(255) UNIQUE NOT NULL,
@@ -113,13 +108,19 @@ const initDB = async () => {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('Database tables initialized successfully');
+    
+    console.log('[Database] 資料庫與所有擴充表初始化完畢！');
   } catch (err) {
-    console.error('Error initializing database tables:', err);
+    console.error('[Database] 建表失敗:', err);
+  } finally {
+    client.release();
   }
-};
+}
 
-initDB();
+initDatabase();
+
+app.get('/', (req, res) => { res.json({ status: 'success', message: 'Wanwangee 後台服務運作中！' }); });
+app.get('/api/health', (req, res) => { res.json({ status: 'success', message: 'Wanwangee PostgreSQL 後台運行中！' }); });
 
 // ==========================================
 // 後台api

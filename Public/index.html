@@ -676,7 +676,7 @@ function switchSubTab(status) {
     loadOrders(status);
 }       
 
-// 2. 點擊「出貨」或「收款」按鈕時觸發（支援取消狀態與帶入原日期）
+// 2. 點擊「出貨」或「收款」按鈕時觸發（支援取消狀態與帶入原日期與 7-11 網址）
 async function openDatePrompt(orderId, type, targetStatus) {
     const badge = document.getElementById(type === 'shipping' ? `shipBadge${orderId}` : `payBadge${orderId}`);
     const currentText = badge ? badge.innerText : '';
@@ -685,23 +685,30 @@ async function openDatePrompt(orderId, type, targetStatus) {
     if (currentText.includes(targetStatus)) {
         const isCancel = confirm(`目前狀態為「${targetStatus}」，是否要取消此狀態並改回未處理？`);
         if (isCancel) {
-            await updateOrderStatus(orderId, type, type === 'shipping' ? '未寄出' : '未收款', '');
+            await updateOrderStatus(orderId, type, type === 'shipping' ? '未寄出' : '未收款', '', '');
         }
         return;
     }
 
-    // 若未完成，帶入今日日期或預設值讓管理者輸入
+    // 若未完成，帶入今日日期
     const today = new Date().toISOString().split('T')[0];
     const actionName = targetStatus === '已寄出' ? '出貨日期' : '收款日期';
 
     const inputDate = prompt(`請輸入${actionName} (格式: YYYY-MM-DD):`, today);
     if (inputDate === null) return; // 按取消
 
-    await updateOrderStatus(orderId, type, targetStatus, inputDate);
+    let sevenElevenUrl = '';
+    // 💡 如果是點擊出貨，額外詢問 7-11 網址
+    if (targetStatus === '已寄出') {
+        sevenElevenUrl = prompt('請輸入 7-11 寄件/取貨網址 (可留空):', '') || '';
+        if (sevenElevenUrl === null) return; // 按取消
+    }
+
+    await updateOrderStatus(orderId, type, targetStatus, inputDate, sevenElevenUrl);
 }
 
-// 3. 發送 API 更新出貨/收款狀態
-async function updateOrderStatus(id, type, statusValue, dateValue) {
+// 3. 發送 API 更新出貨/收款狀態 (加入 seven_eleven_url)
+async function updateOrderStatus(id, type, statusValue, dateValue, urlValue) {
     try {
         const res = await fetch(`${API_BASE_URL}/api/admin/orders/${id}/status`, {
             method: 'PATCH',
@@ -709,7 +716,8 @@ async function updateOrderStatus(id, type, statusValue, dateValue) {
             body: JSON.stringify({ 
                 type: type, 
                 status: statusValue, 
-                date: dateValue || null 
+                date: dateValue || null,
+                seven_eleven_url: urlValue || '' // 傳送 7-11 網址
             })
         });
         
@@ -724,7 +732,6 @@ async function updateOrderStatus(id, type, statusValue, dateValue) {
         alert('網路連線或伺服器錯誤');
     }
 }
-
 // 4. 修改備註
 async function updateOrderMemo(id, memoValue) {
     try {

@@ -96,7 +96,8 @@ async function initDatabase() {
         payment_status VARCHAR(50) DEFAULT '未收款',
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
-        memo TEXT DEFAULT ''
+        memo TEXT DEFAULT '',
+        seven_eleven_url TEXT DEFAULT '' -- 💡 新增的 7-11 網址欄位
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (
@@ -446,11 +447,11 @@ app.get('/api/admin/orders', async (req, res) => {
     }
 });
 
-// 更新出貨或收款狀態
+// 更新出貨或收款狀態 (支援寫入 7-11 網址)
 app.patch('/api/admin/orders/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
-        const { type, status, date } = req.body; // type: 'shipping' 或 'payment'
+        const { type, status, date, seven_eleven_url } = req.body; // 接收 seven_eleven_url
 
         let updateField = '';
         let dateField = '';
@@ -465,14 +466,29 @@ app.patch('/api/admin/orders/:id/status', async (req, res) => {
             return res.status(400).json({ success: false, message: '無效的更新類型' });
         }
 
-        // 1. 更新指定欄位與日期 (若 date 為空則清空日期)
-        const query = `
-            UPDATE orders 
-            SET ${updateField} = $1, ${dateField} = $2 
-            WHERE id = $3 
-            RETURNING *;
-        `;
-        const result = await pool.query(query, [status, date || null, id]);
+        // 1. 更新指定欄位、日期，若有提供 seven_eleven_url 則一併更新
+        let query = '';
+        let values = [];
+
+        if (seven_eleven_url !== undefined && seven_eleven_url !== '') {
+            query = `
+                UPDATE orders 
+                SET ${updateField} = $1, ${dateField} = $2, seven_eleven_url = $3 
+                WHERE id = $4 
+                RETURNING *;
+            `;
+            values = [status, date || null, seven_eleven_url, id];
+        } else {
+            query = `
+                UPDATE orders 
+                SET ${updateField} = $1, ${dateField} = $2 
+                WHERE id = $3 
+                RETURNING *;
+            `;
+            values = [status, date || null, id];
+        }
+
+        const result = await pool.query(query, values);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ success: false, message: '找不到該訂單' });

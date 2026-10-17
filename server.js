@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // PostgreSQL 連線設定 (結合您提供的連線參數與時區設定)
-let dbUrl = process.env.DATABASE_URL || 'postgresql://root:vyECdB09Ha6z8gXNO342U1Z5MJrei7bS@localhost:5432/wanwangee_db';
+let dbUrl = process.env.DATABASE_URL || 'postgresql://root:123@localhost:5432/wanwangee';
 
 const pool = new Pool({
   connectionString: dbUrl,
@@ -55,6 +55,12 @@ const initDB = async () => {
         member_level VARCHAR(50) DEFAULT '一般會員',
         total_spent NUMERIC(10, 2) DEFAULT 0,
         join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- 💡 必須先建立 categories，因為 products 有外鍵參考它
+      CREATE TABLE IF NOT EXISTS categories (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS products (
@@ -95,11 +101,6 @@ const initDB = async () => {
         payment_date TIMESTAMP,
         last_notify_time TIMESTAMP,
         memo TEXT DEFAULT ''
-      );
-
-      CREATE TABLE IF NOT EXISTS categories (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL
       );
 
       CREATE TABLE IF NOT EXISTS audit_logs (
